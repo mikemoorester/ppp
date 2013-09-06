@@ -78,7 +78,7 @@ elif option.up :
         ind2 = np.argsort(data2[:,1])
         if option.diff:
             diff = []
-            ax.plot(data[ind,1], (data[ind,5]-data2[ind,5])*1000.,linewidth=2)
+            ax.plot(data[ind,1], (data[ind,5]-data2[ind2,5])*1000.,linewidth=2)
         else:
             ax.plot(data[ind,1], data[ind,5]*1000.,linewidth=2)
             ax.plot(data2[ind2,1], data2[ind2,5]*1000.,linewidth=2)
