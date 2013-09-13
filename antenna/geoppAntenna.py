@@ -6,10 +6,11 @@ import re
 import string as s
 
 
-def parseARE(areFile):
+def parseGEOPP(geoppFile):
     '''
-    parseARE(antmod.are)
-    -parse the geopp .are file
+    parseGEOPP(antmod.are)
+    -parse the geopp .are file format
+    -parse the geopp .arp file format
 
     are is an elvation dependent only antenna calibration result, where the
     PCO has been pushed into the PCVs.
@@ -36,9 +37,10 @@ def parseARE(areFile):
 
     L1flag = 0
     L2flag = 0
+    ObsCtr = 0
     antenna = {}
 
-    with open(areFile) as f:
+    with open(geoppFile) as f:
         for line in f:
             line = line.rstrip()
             if typeRGX.search(line) :
@@ -76,16 +78,48 @@ def parseARE(areFile):
                 antenna['dazi'] = float(line[18:])
             elif varL1RGX.search(line) :
                 L1flag = 1
+                ObsCtr = 0
             elif varL2RGX.search(line) :
                 L2flag = 1
+                ObsCtr = 0
             elif L1flag == 1:
-                L1flag = 0
                 tmp = np.array(s.split(line))
-                antenna['L1NoAZI'] = tmp.astype(np.float)
+                #check that all of the data has been read in before reseting the flag
+                if antenna['dazi'] < 0.0001 :
+                    antenna['L1PCV'] = tmp.astype(np.float)
+                    L1flag = 0
+                    ObsCtr = 0
+                else :
+                    if ObsCtr == 0:
+                        rows = int(360./antenna['dazi']) + 1
+                        cols = int(90./antenna['dele']) + 1
+                        antenna['L1PCV'] = np.zeros((rows,cols))
+
+                    antenna['L1PCV'][ObsCtr,:] = tmp.astype(np.float)
+                    ObsCtr += 1
+
+                    if ObsCtr == (int(360./antenna['dazi']) + 1):
+                        L1flag = 0
+                        ObsCtr = 0
             elif L2flag == 1:
-                L2flag = 0
                 tmp = np.array(s.split(line))
-                antenna['L2NoAZI'] = tmp.astype(np.float)
+                if antenna['dazi'] < 0.0001 :
+                    antenna['L2PCV'] = tmp.astype(np.float)
+                    L2flag = 0
+                    ObsCtr = 0
+                else :
+                    if ObsCtr == 0:
+                        rows = int(360./antenna['dazi']) + 1
+                        cols = int(90./antenna['dele']) + 1
+                        antenna['L2PCV'] = np.zeros((rows,cols))
+
+                    antenna['L2PCV'][ObsCtr,:] = tmp.astype(np.float)
+                    ObsCtr += 1
+
+                    if ObsCtr == (int(360./antenna['dazi']) + 1):
+                        L2flag = 0
+                        ObsCtr = 0
+                L2flag = 0
 
     return antenna
 
@@ -113,7 +147,7 @@ if __name__ == "__main__":
     (option,args) = parser.parse_args()
 
     if option.difference:
-        refantenna = parseARE(option.refAntenna)
+        refantenna = parseGEOPP(option.refAntenna)
    
         fig = plt.figure(figsize=(3.62, 2.76))
         ax = fig.add_subplot(111) 
@@ -122,9 +156,9 @@ if __name__ == "__main__":
         ax2 = fig2.add_subplot(111) 
 
         if option.file1:
-            antenna1 = parseARE(option.file1)
-            ax.plot(range(0,91,5),refantenna['L1NoAZI']-antenna1['L1NoAZI'])
-            ax2.plot(range(0,91,5),refantenna['L2NoAZI']-antenna1['L2NoAZI'])
+            antenna1 = parseGEOPP(option.file1)
+            ax.plot(range(0,91,5),refantenna['L1PCV']-antenna1['L1PCV'])
+            ax2.plot(range(0,91,5),refantenna['L2PCV']-antenna1['L2PCV'])
             #if option.printFile:
             #    ctr = 0
             #    f1=open('./fileL1.txt', 'w')
@@ -137,37 +171,55 @@ if __name__ == "__main__":
             #    f2.close()
         if option.file2:
             antenna2 = parseARE(option.file2)
-            ax.plot(range(0,91,5),refantenna['L1NoAZI']-antenna2['L1NoAZI'])
-            ax2.plot(range(0,91,5),refantenna['L2NoAZI']-antenna2['L2NoAZI'])
+            ax.plot(range(0,91,5),refantenna['L1PCV']-antenna2['L1PCV'])
+            ax2.plot(range(0,91,5),refantenna['L2PCV']-antenna2['L2PCV'])
         if option.file3:
             antenna3 = parseARE(option.file3)
-            ax.plot(range(0,91,5),refantenna['L1NoAZI']-antenna3['L1NoAZI'])
-            ax2.plot(range(0,91,5),refantenna['L2NoAZI']-antenna3['L2NoAZI'])
+            ax.plot(range(0,91,5),refantenna['L1PCV']-antenna3['L1PCV'])
+            ax2.plot(range(0,91,5),refantenna['L2PCV']-antenna3['L2PCV'])
         if option.file4:
             antenna4 = parseARE(option.file4)
-            ax.plot(range(0,91,5),refantenna['L1NoAZI']-antenna4['L1NoAZI'])
-            ax2.plot(range(0,91,5),refantenna['L2NoAZI']-antenna4['L2NoAZI'])
+            ax.plot(range(0,91,5),refantenna['L1PCV']-antenna4['L1PCV'])
+            ax2.plot(range(0,91,5),refantenna['L2PCV']-antenna4['L2PCV'])
 
+    elif option.printFile:
+        antenna1 = parseGEOPP(option.file1)
+        if antenna1['dazi'] < 0.001 :
+            ctr = 0
+            for ele in range(0,91,5) :
+                print("{:02d} {}".format(ele,(2.5457*antenna1['L1PCV'][ctr] - 1.5457*antenna1['L2PCV'][ctr])))
+                ctr += 1
+        else:
+            ictr = 0
+            jctr = 0
+            for az in range(0,361,5):
+                jctr = 0
+                for ele in range(0,91,5) :
+                    print("{:02d} {:02d} {}".format(az,ele,
+                            (2.5457*antenna1['L1PCV'][ictr][jctr] - 1.5457*antenna1['L2PCV'][ictr][jctr])))
+                    jctr += 1
+                ictr +=1
+                
     else:
-        antenna1 = parseARE(option.file1)
+        antenna1 = parseGEOPP(option.file1)
    
         fig = plt.figure(figsize=(3.62, 2.76))
         ax = fig.add_subplot(111) 
-        ax.plot(range(0,91,5),antenna1['L1NoAZI'],'b-d')
+        ax.plot(range(0,91,5),antenna1['L1PCV'],'b-d')
         ax.set_xlabel('Elevation Angle (degrees)')
         ax.set_ylabel('PCV (m)')
 
         if option.file2:
-            antenna2 = parseARE(option.file2)
-            ax.plot(range(0,91,5),antenna2['L1NoAZI'],'r-^')
+            antenna2 = parseGEOPP(option.file2)
+            ax.plot(range(0,91,5),antenna2['L1PCV'],'r-^')
             ax.legend([option.legend1,option.legend2],fontsize=8,loc=0)
         if option.file3:
-            antenna3 = parseARE(option.file3)
-            ax.plot(range(0,91,5),antenna3['L1NoAZI'],'k-o')
+            antenna3 = parseGEOPP(option.file3)
+            ax.plot(range(0,91,5),antenna3['L1PCV'],'k-o')
             ax.legend([option.legend1,option.legend2,option.legend3],fontsize=8,loc=0)
         if option.file4:
-            antenna4 = parseARE(option.file4)
-            ax.plot(range(0,91,5),antenna4['L1NoAZI'])
+            antenna4 = parseGEOPP(option.file4)
+            ax.plot(range(0,91,5),antenna4['L1PCV'])
             ax.legend([option.legend1,option.legend2,option.legend3,option.legend4],fontsize=8,loc=0)
     
         for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
@@ -175,21 +227,20 @@ if __name__ == "__main__":
             item.set_fontsize(8)
         fig.tight_layout()
 
-
         fig2 = plt.figure(figsize=(3.62, 2.76))
         ax2 = fig2.add_subplot(111) 
-        ax2.plot(range(0,91,5),antenna1['L2NoAZI'],'b-d')
+        ax2.plot(range(0,91,5),antenna1['L2PCV'],'b-d')
         ax2.set_xlabel('Elevation Angle (degrees)')
         ax2.set_ylabel('PCV (mm)')
 
         if option.file2:
-            ax2.plot(range(0,91,5),antenna2['L2NoAZI'],'r-^')
+            ax2.plot(range(0,91,5),antenna2['L2PCV'],'r-^')
             ax2.legend([option.legend1,option.legend2],fontsize=8,loc=0)
         if option.file3:
-            ax2.plot(range(0,91,5),antenna3['L2NoAZI'],'k-o')
+            ax2.plot(range(0,91,5),antenna3['L2PCV'],'k-o')
             ax2.legend([option.legend1,option.legend2,option.legend3],fontsize=8,loc=0)
         if option.file4:
-            ax2.plot(range(0,91,5),antenna4['L2NoAZI'])
+            ax2.plot(range(0,91,5),antenna4['L2PCV'])
             ax2.legend([option.legend1,option.legend2,option.legend3,option.legend4],fontsize=8,loc=0)
 
         for item in ([ax2.title, ax2.xaxis.label, ax2.yaxis.label] +
@@ -203,23 +254,23 @@ if __name__ == "__main__":
         ax3 = fig3.add_subplot(111) 
         ctr = 0
         for ele in range(0,91,5) :
-            print("{:02d} {}".format(ele,(2.5457*antenna1['L1NoAZI'][ctr] - 1.5457*antenna1['L2NoAZI'][ctr])))
-            ax3.scatter(ele,(2.5457*antenna1['L1NoAZI'][ctr] - 1.5457*antenna1['L2NoAZI'][ctr]))
+            print("{:02d} {}".format(ele,(2.5457*antenna1['L1PCV'][ctr] - 1.5457*antenna1['L2PCV'][ctr])))
+            ax3.scatter(ele,(2.5457*antenna1['L1PCV'][ctr] - 1.5457*antenna1['L2PCV'][ctr]))
             ctr += 1
 
-        ax3.plot(range(0,91,5),(2.5457*antenna1['L1NoAZI'] - 1.5457*antenna1['L2NoAZI']),'b-d')
+        ax3.plot(range(0,91,5),(2.5457*antenna1['L1PCV'] - 1.5457*antenna1['L2PCV']),'b-d')
         ax3.set_xlabel('Elevation Angle (degrees)')
         ax3.set_ylabel('PCV (mm)')
         ax3.set_xlim([0,90])
 
         if option.file2:
-            ax3.plot(range(0,91,5),(2.5457*antenna2['L1NoAZI'] - 1.5457*antenna2['L2NoAZI']),'r-^')
+            ax3.plot(range(0,91,5),(2.5457*antenna2['L1PCV'] - 1.5457*antenna2['L2PCV']),'r-^')
             ax3.legend([option.legend1,option.legend2],fontsize=8,loc=0)
         if option.file3:
-            ax3.plot(range(0,91,5),(2.5457*antenna3['L1NoAZI'] - 1.5457*antenna3['L2NoAZI']),'k-o')
+            ax3.plot(range(0,91,5),(2.5457*antenna3['L1PCV'] - 1.5457*antenna3['L2PCV']),'k-o')
             ax3.legend([option.legend1,option.legend2,option.legend3],fontsize=8,loc=0)
         if option.file4:
-            ax3.plot(range(0,91,5),(2.5457*antenna4['L1NoAZI'] - 1.5457*antenna4['L2NoAZI']))
+            ax3.plot(range(0,91,5),(2.5457*antenna4['L1PCV'] - 1.5457*antenna4['L2NPCV']))
             ax3.legend([option.legend1,option.legend2,option.legend3,option.legend4],fontsize=8, loc=0)
 
         for item in ([ax3.title, ax3.xaxis.label, ax3.yaxis.label] +
