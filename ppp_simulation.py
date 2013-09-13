@@ -95,6 +95,7 @@ parser.add_option("--esm","--ESM", dest="esmFile", help="Create an ESM from a re
 # Add a radome error in
 #
 parser.add_option( "--radome", dest="radomeFile", help="Radome Error file to add as a bias in m")
+parser.add_option( "--radomeAZ", dest="radomeFileAZ", help="Radome Error filei with azimuth variations to add as a bias in m")
 parser.add_option( "--radomeName", dest="radomeName", help="Radome Error file to add as a bias in m")
 
 #
@@ -387,6 +388,9 @@ while startymdhms < stopymdhms :
     if option.radomeFile:
         radome = np.genfromtxt(option.radomeFile)
         r = interpolate.interp1d(radome[:,0], radome[:,1], kind='linear')
+    elif option.radomeFileAZ:
+	radome = np.genfromtxt(option.radomeFileAZ)
+    	r = interpolate.interp2d(radome[:,0], radome[:,1], radome[:,2], kind='linear')
 
     # intialise observation counter
     obs_count = 1
@@ -620,6 +624,8 @@ while startymdhms < stopymdhms :
 
             if option.radomeFile:
                 bias_mp = bias_mp + r(satD[skey]['El1'])
+	    elif option.radomeFileAZ:
+                bias_mp = bias_mp + r(satD[skey]['El1'],satD[skey]['Az1'])[0]
 
             b[obs_count-1,0] = ( np.sqrt( bias_en**2 + epochu_bias**2 - 
                                 2. * bias_en * epochu_bias * np.cos(np.radians(90.+satD[skey]['El1'])) ) +
@@ -858,11 +864,13 @@ if option.print_residuals:
         resOut = 'ppp_'+str(ppp)+'_eleW_'+str(eleW)+'_eleA_'+str(int(option.elevationAngle))+'_tropEst_'+str(int(option.troposphereFrequency / 3600))+'_ndays_'+str(option.ndays)+'_r_'+str(option.randomNoise)+'_h_'+h+'.res'
 
     i = 0
-    #print("v_El:",np.shape(v_EL),"v_Az:",np.shape(v_Az),"vfull:",np.shape(vfull))
+    print("v_El:",np.shape(v_El),"v_Az:",np.shape(v_Az),"vfull:",np.shape(vfull))
     fres = open(resOut,'w')
+    
     for r in vfull :
-        # need to convert elevation to zenith angle, and the residuals from m to mm
-        fres.write('{0:3.4f} {1:3.4f} {2:.2f}\n'.format(v_Az[i],(90.-v_El[i]),(vfull[i,0]*1000.)))
+	if i < np.size(v_El) and i < np.size(v_Az) and i < np.size(vfull):
+            # need to convert elevation to zenith angle, and the residuals from m to mm
+            fres.write('{0:3.4f} {1:3.4f} {2:.2f}\n'.format(v_Az[i],(90.-v_El[i]),(vfull[i,0]*1000.)))
         i += 1
     fres.close()
 #
