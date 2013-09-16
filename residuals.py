@@ -1,4 +1,5 @@
 import numpy as np
+import re
 
 def blockMedian(residualFile, gridSpacing, bType):
     """
@@ -100,6 +101,71 @@ def blockMedian(residualFile, gridSpacing, bType):
 
     return False 
 
+def parseDPH(dphFile) :
+    """
+    dph = parseDPH(dphFile)
+    Read in a GAMIT undifferenced phase residual file.
+    Return a DPH structurea
+
+    Will skip any lines in the file which contain a '*' 
+    at any column number
+
+    Checks there are no comments in the first column of the file
+
+    """
+
+    asterixRGX = re.compile('\*')
+
+    dph = {}
+
+    obs = {}
+    obs['dphs'] = []
+    obs['satsViewed'] = set()
+
+    debug = 0
+
+    with open(dphFile) as f:
+        for line in f:
+            dph = {}
+            if line[0] != ' ':
+                if debug :
+                    print('A comment',line)
+            elif asterixRGX.search(line):
+                if debug :
+                    print('Bad observation',line)
+            else :
+                dph['epoch'] = int(line[1:5])
+                dph['l1cyc'] = float(line[6:15])
+                dph['l2cyc'] = float(line[16:24])
+                dph['p1cyc'] = float(line[25:33])
+                dph['p2cyc'] = float(line[34:42])
+                dph['lccyc'] = float(line[43:51])
+                dph['lgcyc'] = float(line[52:60])
+                dph['pccyc'] = float(line[61:69])
+                dph['wlcyc'] = float(line[70:78])
+                dph['ncyc']  = float(line[79:87])
+                dph['lsv']   = int(line[88:91])
+                dph['az']    = float(line[94:102])
+                dph['el']    = float(line[105:112])
+                dph['pf']    = int(line[113:114])
+                dph['dataf'] = int(line[115:127])
+
+                #if tmp.strip() != '' :
+                if str(line[128:148]).strip() != '' :
+                    dph['L1cycles'] = float(line[128:148])
+                if str(line[149:169]).strip() != '' :
+                    dph['L2cycles'] = float(line[149:169])
+
+                dph['prn']   = int(line[170:172])
+                obs['dphs'].append(dph)
+
+                # keep a record of all the unique satellies which have residuals
+                obs['satsViewed'].add(dph['prn'])
+                   
+    return obs 
+
+#===========================================================================
+
 if __name__ == "__main__":
 
     from matplotlib import pyplot as plt
@@ -115,10 +181,15 @@ if __name__ == "__main__":
     parser.add_option("-P", "--plotPolar", dest="polarPlot",action='store_true',default=False,
                         help="Polar Plot Residuals vs Azimuth & Elevation Angle")
     parser.add_option("--esm","--ESM",dest="esmFilename",help="Example Residual file from which to create an ESM")
-     
+    parser.add_option("-D","--DPH",dest="dphFilename",help="DPH filename to parse, obtained from GAMIT") 
     (option, args) = parser.parse_args()
 
     #===================================
+    
+    if option.dphFilename :
+        dph = parseDPH(option.dphFilename)
+    
+    
     # Calculate the block median
     zz = np.linspace(0,90,181)
 
