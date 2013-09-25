@@ -252,15 +252,17 @@ if __name__ == "__main__":
         # Now calculate the LC difference
         fig3 = plt.figure(figsize=(3.62, 2.76))
         ax3 = fig3.add_subplot(111) 
-        ctr = 0
-        for ele in range(0,91,5) :
-            print("{:02d} {}".format(ele,(2.5457*antenna1['L1PCV'][ctr] - 1.5457*antenna1['L2PCV'][ctr])))
-            ax3.scatter(ele,(2.5457*antenna1['L1PCV'][ctr] - 1.5457*antenna1['L2PCV'][ctr]))
-            ctr += 1
 
-        ax3.plot(range(0,91,5),(2.5457*antenna1['L1PCV'] - 1.5457*antenna1['L2PCV']),'b-d')
+        # Only need this bit if I want to output the coords to stdout
+        #ctr = 0
+        #for ele in range(0,91,5) :
+        #    print("{:02d} {}".format(ele,(2.5457*antenna1['L1PCV'][ctr] - 1.5457*antenna1['L2PCV'][ctr])))
+        #    ctr += 1
+
+        #ax3.plot(range(0,91,5),(2.5457*antenna1['L1PCV'] - 1.5457*antenna1['L2PCV']),'b-d')
+        ax3.plot(range(0,91,5),(2545.7*antenna1['L1PCV'] - 1545.7*antenna1['L2PCV']),'b-d')
         ax3.set_xlabel('Elevation Angle (degrees)')
-        ax3.set_ylabel('PCV (mm)')
+        ax3.set_ylabel('LC PCV (mm)')
         ax3.set_xlim([0,90])
 
         if option.file2:

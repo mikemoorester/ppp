@@ -71,20 +71,23 @@ elif option.up :
 
         data2 = np.genfromtxt(option.filename2)
         ind2 = np.argsort(data2[:,1])
+
+        # good options when a marker/symbol is needed on the plot
         #ax.plot(data[ind,1], data[ind,5]*1000.,'b-d',markersize=3)
         #ax.plot(data2[ind2,1], data2[ind2,5]*1000.,'r-^',markersize=3)
         #ax.plot(data3[ind3,1], data3[ind3,5]*1000.,'k-o',markersize=3)
+        #plt.set_markersize(1) 
+
         ax.plot(data[ind,1], data[ind,5]*1000.,'b',linewidth=2)
         ax.plot(data2[ind2,1], data2[ind2,5]*1000.,'r',linewidth=2)
         ax.plot(data3[ind3,1], data3[ind3,5]*1000.,'k',linewidth=2)
-        #plt.set_markersize(1) 
         ax.legend([option.legend1,option.legend2,option.legend3],fontsize=8,loc=0)
     elif option.filename2:
         data2 = np.genfromtxt(option.filename2)
         ind2 = np.argsort(data2[:,1])
         if option.diff:
             diff = []
-            ax.plot(data[ind,1], (data[ind,5]-data2[ind2,5])*1000.,linewidth=2)
+            ax.plot(data[ind,1], ( np.abs(data[ind,5]) - np.abs(data2[ind2,5]) )*1000.,linewidth=2)
         else:
             ax.plot(data[ind,1], data[ind,5]*1000.,linewidth=2)
             ax.plot(data2[ind2,1], data2[ind2,5]*1000.,linewidth=2)
@@ -99,14 +102,17 @@ elif option.filename3 :
     ind2  = np.argsort(data2[:,1])
     ind3  = np.argsort(data3[:,1])
 
-    ax.plot(data[ind,1], data[ind,2], data2[ind2,1], data2[ind2,2], data3[ind3,1], data3[ind3,2],linewidth=2)
+    ax.plot(data[ind,1],   data[ind,2],'b',linewidth=2)
+    ax.plot(data2[ind2,1], data2[ind2,2],'r',linewidth=2)
+    ax.plot(data3[ind3,1], data3[ind3,2],'k',linewidth=2)
+
     ax.legend([option.legend1,option.legend2,option.legend3],fontsize=8)
 elif option.filename2 :
     data2 = np.genfromtxt(option.filename2)
     ind = np.argsort(data[:,1])
     ind2 = np.argsort(data2[:,1])
     if option.diff:
-        ax.plot(data[ind,1], (data[ind,2]-data2[ind2,2]),linewidth=2)
+        ax.plot(data[ind,1], (np.abs(data[ind,2])-np.abs(data2[ind2,2])),linewidth=2)
     else:
         ax.plot(data[ind,1], data[ind,2], data2[ind2,1], data2[ind2,2],linewidth=2)
         ax.legend([option.legend1,option.legend2],fontsize=8)
