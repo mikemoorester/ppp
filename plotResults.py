@@ -53,15 +53,7 @@ ax.set_xlabel('Monument Height (m)')
 ax.set_ylabel('RMS  (mm)')
 
 # If we have two files then we want to do a comparison of results
-if option.filename3 :
-    data2 = np.genfromtxt(option.filename2)
-    data3 = np.genfromtxt(option.filename3)
-    ind2  = np.argsort(data2[:,1])
-    ind3  = np.argsort(data3[:,1])
-
-    ax.plot(data[ind,1], data[ind,2], data2[ind2,1], data2[ind2,2], data3[ind3,1], data3[ind3,2],linewidth=2)
-    ax.legend([option.legend1,option.legend2,option.legend3],fontsize=8)
-elif option.lat :
+if option.lat :
     data2 = np.genfromtxt(option.filename2)
 
     ind  = np.argsort(data[:,-2])
@@ -73,27 +65,57 @@ elif option.lat :
     ax.set_xlim([-90, 90])
     ax.set_ylabel('RMS  (mm)')
 elif option.up :
-    if option.filename2:
+    if option.filename3:
+        data3 = np.genfromtxt(option.filename3)
+        ind3 = np.argsort(data3[:,1])
+
+        data2 = np.genfromtxt(option.filename2)
+        ind2 = np.argsort(data2[:,1])
+
+        # good options when a marker/symbol is needed on the plot
+        #ax.plot(data[ind,1], data[ind,5]*1000.,'b-d',markersize=3)
+        #ax.plot(data2[ind2,1], data2[ind2,5]*1000.,'r-^',markersize=3)
+        #ax.plot(data3[ind3,1], data3[ind3,5]*1000.,'k-o',markersize=3)
+        #plt.set_markersize(1) 
+
+        ax.plot(data[ind,1], data[ind,5]*1000.,'b',linewidth=2)
+        ax.plot(data2[ind2,1], data2[ind2,5]*1000.,'r',linewidth=2)
+        ax.plot(data3[ind3,1], data3[ind3,5]*1000.,'k',linewidth=2)
+        ax.legend([option.legend1,option.legend2,option.legend3],fontsize=8,loc=0)
+    elif option.filename2:
         data2 = np.genfromtxt(option.filename2)
         ind2 = np.argsort(data2[:,1])
         if option.diff:
             diff = []
-            ax.plot(data[ind,1], (data[ind,5]-data2[ind2,5])*1000.,linewidth=2)
+            ax.plot(data[ind,1], ( np.abs(data[ind,5]) - np.abs(data2[ind2,5]) )*1000.,linewidth=2)
         else:
             ax.plot(data[ind,1], data[ind,5]*1000.,linewidth=2)
             ax.plot(data2[ind2,1], data2[ind2,5]*1000.,linewidth=2)
     else:
-        ind = np.argsort(data[:,1])
         ax.plot(data[ind,1], data[ind,5]*1000.,linewidth=2)
 
+    ax.plot([0,2.0],[0,0],'k--')
     ax.set_ylabel('Height Bias (mm)')
+elif option.filename3 :
+    data2 = np.genfromtxt(option.filename2)
+    data3 = np.genfromtxt(option.filename3)
+    ind2  = np.argsort(data2[:,1])
+    ind3  = np.argsort(data3[:,1])
+
+    ax.plot(data[ind,1],   data[ind,2],'b',linewidth=2)
+    ax.plot(data2[ind2,1], data2[ind2,2],'r',linewidth=2)
+    ax.plot(data3[ind3,1], data3[ind3,2],'k',linewidth=2)
+
+    ax.legend([option.legend1,option.legend2,option.legend3],fontsize=8)
 elif option.filename2 :
     data2 = np.genfromtxt(option.filename2)
     ind = np.argsort(data[:,1])
     ind2 = np.argsort(data2[:,1])
-
-    ax.plot(data[ind,1], data[ind,2], data2[ind2,1], data2[ind2,2],linewidth=2)
-    ax.legend([option.legend1,option.legend2],fontsize=8)
+    if option.diff:
+        ax.plot(data[ind,1], (np.abs(data[ind,2])-np.abs(data2[ind2,2])),linewidth=2)
+    else:
+        ax.plot(data[ind,1], data[ind,2], data2[ind2,1], data2[ind2,2],linewidth=2)
+        ax.legend([option.legend1,option.legend2],fontsize=8)
 elif option.north :
     ax.plot(data[ind,1], data[ind,3]*1000.,linewidth=2)
     ax.set_ylabel('North Bias (mm)')

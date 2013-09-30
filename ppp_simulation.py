@@ -857,11 +857,16 @@ if option.print_residuals:
         eleW = 1
 
     h = "{:.2f}".format(option.height)
-  
+
+    if option.tropEst:
+        tropName = str(int(option.troposphereFrequency / 3600))
+    else:
+        tropName = '0'
+
     if option.radomeName:
-        resOut = 'ppp_'+str(ppp)+'_eleW_'+str(eleW)+'_eleA_'+str(int(option.elevationAngle))+'_tropEst_'+str(int(option.troposphereFrequency / 3600))+'_ndays_'+str(option.ndays)+'_r_'+str(option.randomNoise)+'_radome_'+option.radomeName+'_h_'+h+'.res'
+        resOut = 'ppp_'+str(ppp)+'_eleW_'+str(eleW)+'_eleA_'+str(int(option.elevationAngle))+'_tropEst_'+tropName+'_ndays_'+str(option.ndays)+'_S_'+str(option.smooth)+'_r_'+str(option.randomNoise)+'_radome_'+option.radomeName+'_h_'+h+'.res'
     else: 
-        resOut = 'ppp_'+str(ppp)+'_eleW_'+str(eleW)+'_eleA_'+str(int(option.elevationAngle))+'_tropEst_'+str(int(option.troposphereFrequency / 3600))+'_ndays_'+str(option.ndays)+'_r_'+str(option.randomNoise)+'_h_'+h+'.res'
+        resOut = 'ppp_'+str(ppp)+'_eleW_'+str(eleW)+'_eleA_'+str(int(option.elevationAngle))+'_tropEst_'+tropName+'_ndays_'+str(option.ndays)+'_S_'+str(option.smooth)+'_r_'+str(option.randomNoise)+'_h_'+h+'.res'
 
     i = 0
     print("v_El:",np.shape(v_El),"v_Az:",np.shape(v_Az),"vfull:",np.shape(vfull))
