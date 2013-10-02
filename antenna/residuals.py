@@ -124,6 +124,7 @@ def parseDPH(dphFile) :
     obs = {}
     obs['dphs'] = []
     obs['satsViewed'] = set()
+    obs['epochs'] = set()
 
     debug = 0
 
@@ -160,12 +161,29 @@ def parseDPH(dphFile) :
                     dph['L2cycles'] = float(line[149:169])
 
                 dph['prn']   = int(line[170:172])
+                prnSTR = 'prn_'+str(dph['prn'])
+
+                if dph['prn'] in obs['satsViewed'] :
+                    obs[prnSTR].append(dph)
+                else:
+                    obs[prnSTR] = []
+                    obs[prnSTR].append(dph)
+
+                epochStr = str(dph['epoch'])
+                if dph['epoch'] in obs['epochs']:
+                    obs[epochStr].add(dph['prn'])
+                else :
+                    obs['epochs'].add(dph['epoch'])
+                    obs[epochStr] = set()
+                    obs[epochStr].add(dph['prn'])    
+
                 obs['dphs'].append(dph)
 
                 # keep a record of all the unique satellies which have residuals
                 obs['satsViewed'].add(dph['prn'])
                    
     return obs 
+
 
 #===========================================================================
 
@@ -184,20 +202,38 @@ if __name__ == "__main__":
     parser.add_option("-P", "--plotPolar", dest="polarPlot",action='store_true',default=False,
                         help="Polar Plot Residuals vs Azimuth & Elevation Angle")
     parser.add_option("--esm","--ESM",dest="esmFilename",help="Example Residual file from which to create an ESM")
+
     parser.add_option("-D","--DPH",dest="dphFilename",help="DPH filename to parse, obtained from GAMIT") 
+
     (option, args) = parser.parse_args()
 
     #===================================
     
     if option.dphFilename :
-        dph = parseDPH(option.dphFilename)
+        dphs = parseDPH(option.dphFilename)
     
+        fig = plt.figure(figsize=(3.62, 2.76))    
+        ax = fig.add_subplot(111)
+
+        for dph in dphs['prn_1']: 
+            ax.scatter(dph['epoch'],dph['el'])
+
+        ax.set_xlabel('Elevation Angle (degrees)',fontsize=8)
+        ax.set_ylabel('Bias (mm)',fontsize=8)
+        ax.set_ylim([0, 90])
+        ax.set_xlim([0, 2880])
+
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+                                     ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+
+        plt.tight_layout()
+        plt.show() 
     
     # Calculate the block median
     zz = np.linspace(0,90,181)
 
     if option.elevationPlot :
-
         med,medStd,medrms = blockMedian(option.filename,0.5,0)
         # flip the array around so that is in order of elevation angle
         ele = 90. - zz[::-1]

@@ -16,6 +16,10 @@ import multipath as mp
 import broadcastNavigation as bcast
 import geodetic as geod
 import vmf1 
+
+# this is now under antenna/residuals.py
+import sys
+sys.path.append('antenna/')
 import residuals as res
 
 #=================================
@@ -85,6 +89,8 @@ parser.add_option( "-G", "--gainRate", dest="gainrate", help="gainrate", type="f
 parser.add_option( "--MRES", dest="residuals", action="store_true", default=False, help="Use the observed MP residuals and calculate a block median")
 
 parser.add_option("--res", dest="residualFile", help="Path to the observed residual file")
+
+parser.add_option("--dph", dest="dphFile", help="Path to the observed DPH residual file")
 
 #
 # Add an ESM in
@@ -180,6 +186,10 @@ if option.esmFile:
     e = interpolate.interp2d(x, y, ESM, kind='linear')
 else:
     esmFlag = 0
+
+# Check to see if we need to import a DPH file
+if option.dphFile:
+    dphs = res.parseDPH(option.dphFile)
 
 # Use unhealthy satellites => 1, don't => 0
 UNHEALTHY = 0
@@ -515,10 +525,19 @@ while startymdhms < stopymdhms :
                 #print("Made it",epoch_time,skey,gpssow)
                 if( (satD[skey]['El2'] > sit2['ElCutOff']) &
                      (satD[skey]['El1'] > sit1['ElCutOff']) ):
-                    epochs['sats'].append(sv)
-                    v_El.append(satD[skey]['El1'])
-                    v_Az.append(satD[skey]['Az1'])
-                    #v_El[obs_count-1,0] = satD[skey]['El1']
+                    # check to see if the obs is in the residual file
+                    # if this is the option.dphFile
+                    if option.dphFile:
+                        # DPH file is every 120s??
+                        if sv in dphs[epoch]:
+                            epochs['sats'].append(sv)
+                            v_El.append(satD[skey]['El1'])
+                            v_Az.append(satD[skey]['Az1'])
+                    else:
+                        epochs['sats'].append(sv)
+                        v_El.append(satD[skey]['El1'])
+                        v_Az.append(satD[skey]['Az1'])
+                        #v_El[obs_count-1,0] = satD[skey]['El1']
 
 #               %% Two ways to get a new ambiguity parameter
 #               % Firstly, a new satellite arc (2 epochs without an obs)
