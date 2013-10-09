@@ -16,6 +16,7 @@ import multipath as mp
 import broadcastNavigation as bcast
 import geodetic as geod
 import vmf1 
+import rinex.Navigation as nav
 
 # this is now under antenna/residuals.py
 import sys
@@ -189,6 +190,7 @@ else:
 
 # Check to see if we need to import a DPH file
 if option.dphFile:
+    print("About to parse a DPH file:",option.dphFile)
     dphs = res.parseDPH(option.dphFile)
 
 # Use unhealthy satellites => 1, don't => 0
@@ -420,8 +422,11 @@ while startymdhms < stopymdhms :
 
     (year, doy) = gpst.jd2doy(startymdhms)
     yy = gpst.yyyy2yy(year)
-    navfile = 'brdc'+str(doy)+'0.'+str(yy)+'n.nav'
-    ndata = bcast.get_binary_eph('/home/547/mjm547/code/ppp/test_data/'+navfile)#brdc0010.12n.nav')
+    #navfile = 'brdc'+str(doy)+'0.'+str(yy)+'n.nav'
+    navfile = 'brdc'+str(doy)+'0.'+str(yy)+'n'
+    #ndata = nav.parseNavData('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile) #brdc0010.12n.nav')
+    ndata = nav.parseFile('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile) #brdc0010.12n.nav')
+    #ndata = bcast.get_binary_eph('/home/547/mjm547/code/ppp/test_data/'+navfile)#brdc0010.12n.nav')
     #ndata = bcast.get_binary_eph('/Users/moore/code/matlab/king/mikemoore/brdc/brdc0010.12n.nav')
     #ndata = bcast.get_binary_eph('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile)#brdc0010.12n.nav')
 
@@ -433,8 +438,15 @@ while startymdhms < stopymdhms :
         skey = str(sv)
         satD[skey] = {}
 
+    # This naming is stupid...
+    # check if epoch_ctr, should really be called obs_ctr
     epoch_ctr = 0
+    # E is a real epoch ctr, unlike the variable epoch_ctr!! 
+    E = 0
+
     for epoch_time in ep :
+        #E += 1
+        epoch_ctr += 1
         # Do some time conversions
         [gpsweek,gpssow,nul] = gpst.jd2gps(epoch_time)
         gpssow = np.round(gpssow)
@@ -528,8 +540,11 @@ while startymdhms < stopymdhms :
                     # check to see if the obs is in the residual file
                     # if this is the option.dphFile
                     if option.dphFile:
-                        # DPH file is every 120s??
-                        if sv in dphs[epoch]:
+                        # DPH is on 30s epochs, need to correlated ths with
+                        # the sample time being used in the simulation
+                        epochSTR = str(epoch_ctr * int(SAMP/30))
+                        #epochSTR = str(epoch_ctr+1)
+                        if sv in dphs[epochSTR]:
                             epochs['sats'].append(sv)
                             v_El.append(satD[skey]['El1'])
                             v_Az.append(satD[skey]['Az1'])
@@ -606,7 +621,7 @@ while startymdhms < stopymdhms :
             amb_count += 1
 
             # Set up the 'b' (O-C) Matrix - up bias for this epoch
-            epoch_ctr = epoch_ctr+1
+            #epoch_ctr = epoch_ctr+1
             epochu_bias=np.interp(epoch_time,bias_t,biasu_values)#,'linear')
             epoche_bias=np.interp(epoch_time,bias_t,biase_values)
             epochn_bias=np.interp(epoch_time,bias_t,biasn_values)

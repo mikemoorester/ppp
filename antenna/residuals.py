@@ -122,7 +122,7 @@ def parseDPH(dphFile) :
     dph = {}
 
     obs = {}
-    obs['dphs'] = []
+    #obs['dphs'] = []
     obs['satsViewed'] = set()
     obs['epochs'] = set()
 
@@ -154,7 +154,6 @@ def parseDPH(dphFile) :
                 dph['pf']    = int(line[113:114])
                 dph['dataf'] = int(line[115:127])
 
-                #if tmp.strip() != '' :
                 if str(line[128:148]).strip() != '' :
                     dph['L1cycles'] = float(line[128:148])
                 if str(line[149:169]).strip() != '' :
@@ -163,12 +162,14 @@ def parseDPH(dphFile) :
                 dph['prn']   = int(line[170:172])
                 prnSTR = 'prn_'+str(dph['prn'])
 
+                # store the data in lists accessed by the sat prn key
                 if dph['prn'] in obs['satsViewed'] :
                     obs[prnSTR].append(dph)
                 else:
                     obs[prnSTR] = []
                     obs[prnSTR].append(dph)
 
+                # Keep a record of each satellite viewed at each epoch in a set
                 epochStr = str(dph['epoch'])
                 if dph['epoch'] in obs['epochs']:
                     obs[epochStr].add(dph['prn'])
@@ -177,7 +178,7 @@ def parseDPH(dphFile) :
                     obs[epochStr] = set()
                     obs[epochStr].add(dph['prn'])    
 
-                obs['dphs'].append(dph)
+                #obs['dphs'].append(dph)
 
                 # keep a record of all the unique satellies which have residuals
                 obs['satsViewed'].add(dph['prn'])
@@ -203,7 +204,7 @@ if __name__ == "__main__":
                         help="Polar Plot Residuals vs Azimuth & Elevation Angle")
     parser.add_option("--esm","--ESM",dest="esmFilename",help="Example Residual file from which to create an ESM")
 
-    parser.add_option("-D","--DPH",dest="dphFilename",help="DPH filename to parse, obtained from GAMIT") 
+    parser.add_option("--dph",dest="dphFilename",help="DPH filename to parse, obtained from GAMIT") 
 
     (option, args) = parser.parse_args()
 

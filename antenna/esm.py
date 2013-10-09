@@ -19,7 +19,8 @@ if __name__ == "__main__":
     parser.add_argument('-g', '--grid', dest='grid', default=5., type=float)
     parser.add_argument('-r', '--resfile', dest='resfile', default='./t/MOBS_DPH_2012_001_143.all')
     parser.add_argument('-t', '--AntType',dest='AntType', default='ASH701945C_M    NONE')
-    parser.add_argument('-p', '--plot',dest='plot', default=False, action='store_true')
+
+    #parser.add_argument('-p', '--plot',dest='plot', default=False, action='store_true')
     parser.add_argument('--polar',dest='polar', default=False, action='store_true')
     parser.add_argument('--elevation',dest='elevation', default=False, action='store_true')
 
@@ -34,45 +35,43 @@ if __name__ == "__main__":
     L2_data = np.array(antenna['data'][1])
 
     # compute the block median from a set of raw residuals
+    # 0.5 should be variable that can be input into the program
     med,medStd,medrms = res.blockMedian(args.resfile,0.5,1)
 
     # add the block median residuals to an interpolate PCV file...
+    # args.grid should come from the antenna data based on the grid spacing of the antex file
     x = np.linspace(0,90, int(90./args.grid)+1 )
     y = np.linspace(0,360, int(360./args.grid)+1 )
-    print('About to interpolate L1')
-    print("x",x.size,x.shape)
-    print("y",y.size,y.shape)
-    print("L1_data",L1_data.size,L1_data.shape)
-    L1 = interpolate.interp2d(y, x, L1_data, kind='linear')
-    print('About to interpolate L2')
+
+    L1 = interpolate.interp2d(x, y, L1_data, kind='linear')
     L2 = interpolate.interp2d(x, y, L2_data, kind='linear')
 
-    esm = np.zeros((y.size,x.size))
+    x = np.linspace(0,90, int(90./0.5)+1 )
+    y = np.linspace(0,360, int(360./0.5)+1 )
+    esm = np.zeros((y.size,x.size,2))
 
     i = 0
-    j = 0
 
     for az in y :
         j = 0
         for el in x :
-            esm[i][j][0] = med[i][j] + L1(az,el)
-            esm[i][j][1] = med[i][j] + L2(az,el)  
+            if med[i,j] > 0.00001 or med[i,j] < -0.00001 :
+                esm[i,j,0] = med[i,j] + L1(el,az)[0]
+                esm[i,j,1] = med[i,j] + L2(el,az)[0]
+            else:
+                esm[i,j,0] = L1(el,az)[0]
+                esm[i,j,1] = L2(el,az)[0]
             j += 1
         i += 1
 
 
-    if args.plot :
+    if args.elevation or args.polar :
         import matplotlib.pyplot as plt
         from matplotlib import cm
 
-        print('Will try to plot the antenna')
-        #aData = np.array(antenna['data'][0])
-        aData = antenna['data'][0]
-        print(aData)
-
         if args.polar :
-            az = np.linspace(0,360,73)
-            zz = np.linspace(0,90,19)
+            az = np.linspace(0, 360, int(360./0.5)+1)
+            zz = np.linspace(0, 90, int(90./0.5)+1)
 
             fig = plt.figure(figsize=(3.62, 2.76))
 
@@ -85,11 +84,12 @@ if __name__ == "__main__":
             ma,mz = np.meshgrid(az,zz,indexing='ij')
             ma = ma.reshape(ma.size,)
             mz = mz.reshape(mz.size,)
-            polar = ax.scatter(np.radians(ma), np.radians(mz)/np.pi*2., c=aData, s=50, alpha=1., cmap=cm.RdBu,vmin=-15,vmax=15, lw=0)
+           
+            polar = ax.scatter(np.radians(ma), np.radians(mz)/np.pi*2., c=esm[:,:,0], s=50, alpha=1., cmap=cm.RdBu,vmin=-15,vmax=15, lw=0)
 
             cbar = fig.colorbar(polar,shrink=0.75,pad=.10)
             cbar.ax.tick_params(labelsize=8)
-            cbar.set_label('PCV (mm)',size=8)
+            cbar.set_label('ESM (mm)',size=8)
 
             for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
                     ax.get_xticklabels() + ax.get_yticklabels()):
@@ -99,17 +99,17 @@ if __name__ == "__main__":
 
         if args.elevation :
             
-            zz = np.linspace(0,90,19)
-            ele = 90. - zz[::-1]
-
             # Do an elevation only plot
             fig = plt.figure(figsize=(3.62, 2.76))
             ax = fig.add_subplot(111)
-            for zen in aData :
-                ax.plot(ele,zen[::-1])
+            ele = np.linspace(0,90, int(90./0.5)+1 )
+            for i in range(0,721):
+                ax.scatter(90.-ele,esm[i,:,0],s=1,alpha=0.8)
+
+            #ax.plot(ele,esm[:,:,0])
             ax.set_xlabel('Elevation Angle (degrees)',fontsize=8)
-            ax.set_ylabel('PCV (mm)',fontsize=8)
-            #ax.set_ylim([-15, 15])
+            ax.set_ylabel('ESM (mm)',fontsize=8)
+            ax.set_xlim([10, 90])
 
             for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
                           ax.get_xticklabels() + ax.get_yticklabels()):

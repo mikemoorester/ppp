@@ -5,14 +5,16 @@ def cal2jd(yr,mn,dy) :
     CAL2JD  Converts calendar date to Julian date using algorithm
     from "Practical Ephemeris Calculations" by Oliver Montenbruck
     (Springer-Verlag, 1989). Uses astronomical year for B.C. dates
-    (2 BC = -1 yr). Non-vectorized version. See also DOY2JD, GPS2JD,
-    JD2CAL, JD2DOW, JD2DOY, JD2GPS, JD2YR, YR2JD.
-    """
+    (2 BC = -1 yr). 
 
-#    if nargin ~= 3
-#        warning('Incorrect number of input arguments');
-#        return;
-#    end
+    Input:
+        yr  : (int) YYYY
+        mn  : (int) MM 01 to 12
+        day : (int) DD 01 to 31
+
+    Output:
+        jd : julian date (float)
+    """
 
 #    if mn < 1 | mn > 12
 #        warning('Invalid input month');
@@ -55,10 +57,7 @@ def cal2jd(yr,mn,dy) :
 def jd2gps(jd):
     """
     % JD2GPS  Converts Julian date to GPS week number (since
-    %   1980.01.06) and seconds of week. Non-vectorized version.
-    %   See also CAL2JD, DOY2JD, GPS2JD, JD2CAL, JD2DOW, JD2DOY,
-    %   JD2YR, YR2JD.
-    % Version: 05 May 2010
+    %   1980.01.06) and seconds of week. 
     % Usage:   [gpsweek,sow,rollover]=jd2gps(jd)
     % Input:   jd       - Julian date
     % Output:  gpsweek  - GPS week number
@@ -69,10 +68,6 @@ def jd2gps(jd):
     % All rights reserved.
     % Email: mike@craymer.com
     """
-#    if nargin ~= 1
-#        warning('Incorrect number of arguments');
-#        return;
-#    end
 #    if jd < 0
 #        warning('Julian date must be greater than or equal to zero');
 #        return;
@@ -181,6 +176,23 @@ def yyyy2yy(year):
     yy = int( str(int(year))[-2] + str(int(year))[-1] )
     return(yy)
 
+def dateTime2gpssow(dt):
+    """
+    Usage: week,sow = dateTime2gpssow(dateTime)
+
+    Input:
+        dt          is a python datetime object
+
+    Output:
+        week        gps week (int)
+        sow         seconds into gpsweek since 0 hr, Sunday (float)
+
+
+    """
+    jd = cal2jd(dt.year,dt.month,dt.day)
+    week, sow, rollover = jd2gps(jd)
+
+    return week, sow
 #=========================
 
 if __name__ == "__main__":

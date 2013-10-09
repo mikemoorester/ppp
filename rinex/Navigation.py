@@ -65,7 +65,7 @@ def parseNavData(nav,line):
         
     return 1
 
-def getFrame(sat,time,nav):
+def getFrame(sat,Ntime,nav):
     '''
     function 
         frame = getFrame(sat,gpssow,nav)
@@ -73,17 +73,24 @@ def getFrame(sat,time,nav):
     ctr = 0
     match = []
     diff = []
+
+    # loop through all of the epochs in the navigation data
     for epoch in nav['epochs'] :
+        # look for any recrds that match the requested PRN
         if epoch['prn'] == sat :
-            #print('Match ',sat,epoch,)
             match.append(ctr)
-            d = epoch['time'] - time
+            d = epoch['time'] - Ntime
+            #print('Match ',sat,epoch,ctr,d)
+            # calculate the difference in time between the satellite epoch time
+            # and the time of broadcast in the the nav data
             diff.append(np.abs(d.total_seconds()))
         ctr += 1
     diff = np.array(diff)
+
+    # return the array which has the smallest absolute difference in time 
     return(nav['epochs'][match[diff.argmin()]])
 
-def satpos(sat,time,nav):
+def satpos(sat,Ntime,nav):
     '''
     function satp = satpos(t,eph);
     %SATPOS Calculation of X,Y,Z coordinates at time t
@@ -94,8 +101,8 @@ def satpos(sat,time,nav):
     GM = 3.986005e14             # earth's universal gravitational m^3/s^2
     Omegae_dot = 7.2921151467e-5 # earth rotation rate, rad/s
 
-    frame = getFrame(sat,time,nav)
-
+    frame = getFrame(sat,Ntime,nav)
+   
     af0         = frame['data'][0]  # SV clock bias (seconds) 
     af1         = frame['data'][1]  # SV clock drift (sec/sec)
     af2         = frame['data'][2]  # clock drift rate (sec/sec2)
@@ -139,8 +146,9 @@ def satpos(sat,time,nav):
     #=============================================================
     # Procedure for coordinate calculation
     A = roota*roota
-    w,t = gpsT.time2gpssow(time)
-
+    w,t = gpsT.dateTime2gpssow(Ntime)
+    #w,t = gpsT.time2gpssow(Ntime)
+   
     tk = t-toe
 
     n0 = np.sqrt(GM/A**3)
@@ -180,7 +188,7 @@ def satpos(sat,time,nav):
 
 #=========================================================
 
-def parseRinexNavFile(navfile):
+def parseFile(navfile):
     headerFlag = 0
 
     nav = {}
