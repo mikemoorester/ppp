@@ -68,22 +68,17 @@ def jd2gps(jd):
     % All rights reserved.
     % Email: mike@craymer.com
     """
-#    if jd < 0
-#        warning('Julian date must be greater than or equal to zero');
-#        return;
-#    end
 
     jdgps = cal2jd(1980,1,6);    # beginning of GPS week numbering
     nweek = int(np.fix((jd-jdgps)/7.))
     sow = (jd - (jdgps+nweek*7)) * 3600*24
     rollover = np.fix(nweek/1024)  # rollover every 1024 weeks
-    #gpsweek = mod(nweek,1024);
     gpsweek = int(nweek)
 
 # rollover is being returned as an array?
 # should just be an int
 
-    return(gpsweek,sow,rollover)
+    return gpsweek,sow,rollover 
 
 
 def jd2cal(jd):
@@ -104,11 +99,6 @@ def jd2cal(jd):
     % All rights reserved.
     % Email: mike@craymer.com
     """
-
-    #if nargin ~= 1
-    #  warning('Incorrect number of arguments');
-    #    return;
-    #end
     #if jd < 0
     #      warning('Julian date must be greater than or equal to zero');
     #     return;
@@ -129,7 +119,7 @@ def jd2cal(jd):
     mn = f - 1. - 12. * np.fix(f/14.)
     yr = d - 4715. - np.fix( (7.+mn)/10. )
 
-    return (yr,mn,dy)
+    return  yr,mn,dy 
 
 
 def jd2doy(jd):
@@ -189,9 +179,9 @@ def dateTime2gpssow(dt):
 
 
     """
-    jd = cal2jd(dt.year,dt.month,dt.day)
+    day = dt.day + dt.hour/24. + dt.minute/1440. + dt.second/86400.
+    jd = cal2jd(dt.year,dt.month,day)
     week, sow, rollover = jd2gps(jd)
-
     return week, sow
 #=========================
 
