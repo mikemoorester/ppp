@@ -147,7 +147,6 @@ def satpos(sat,Ntime,nav):
     # Procedure for coordinate calculation
     A = roota*roota
     w,t = gpsT.dateTime2gpssow(Ntime)
-    #w,t = gpsT.time2gpssow(Ntime)
    
     tk = t-toe
 
