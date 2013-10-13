@@ -126,6 +126,7 @@ def parseGEOPP(geoppFile):
 if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
+    from matplotlib import cm
 
     from optparse import OptionParser
 
@@ -144,6 +145,9 @@ if __name__ == "__main__":
     parser.add_option("--l3", dest="legend3", help="Text String for Lengend Label 3")
     parser.add_option("--l4", dest="legend4", help="Text String for Lengend Label 4")
 
+    parser.add_option("--dre", dest="dre", help="Difference in Elevation file")
+    #parser.add_option("--dre", dest="dre", action='store_true', default=False, help="Difference in Elevation file")
+    parser.add_option("--drp", dest="drp", help="Difference in Elevation/Azimuth file")
     (option,args) = parser.parse_args()
 
     if option.difference:
@@ -182,6 +186,122 @@ if __name__ == "__main__":
             ax.plot(range(0,91,5),refantenna['L1PCV']-antenna4['L1PCV'])
             ax2.plot(range(0,91,5),refantenna['L2PCV']-antenna4['L2PCV'])
 
+    elif option.dre:
+        antenna1 = parseGEOPP(option.dre)
+        outfile = option.dre
+        outfile = re.sub(r'\.dre','',outfile)
+        outfile = re.sub(r'\.','_',outfile)
+
+        fig = plt.figure(figsize=(3.62, 2.76))
+        ax = fig.add_subplot(111) 
+        ax.plot(range(0,91,5),antenna1['L1PCV']*1000,'b-d')
+        ax.plot([0,90],[2,2],'r--')
+        ax.plot([0,90],[0,0],'k-')
+        ax.plot([0,90],[-2,-2],'r--')
+        ax.set_xlabel('Elevation Angle (degrees)')
+        ax.set_ylabel('L1 PCV (mm)')
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+                    ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+        fig.tight_layout()
+        plt.savefig(outfile+'_L1.eps')
+
+        fig2 = plt.figure(figsize=(3.62, 2.76))
+        ax2 = fig2.add_subplot(111) 
+        ax2.plot(range(0,91,5),antenna1['L2PCV']*1000.,'b-d')
+        ax2.plot([0,90],[2,2],'r--')
+        ax2.plot([0,90],[0,0],'k-')
+        ax2.plot([0,90],[-2,-2],'r--')
+        ax2.set_xlabel('Elevation Angle (degrees)')
+        ax2.set_ylabel('L2 PCV (mm)')
+        for item in ([ax2.title, ax2.xaxis.label, ax2.yaxis.label] +
+                    ax2.get_xticklabels() + ax2.get_yticklabels()):
+            item.set_fontsize(8)
+        fig2.tight_layout()
+        plt.savefig(outfile+'_L2.eps')
+
+        # Now calculate the LC difference
+        fig3 = plt.figure(figsize=(3.62, 2.76))
+        ax3 = fig3.add_subplot(111) 
+        ax3.plot(range(0,91,5),(2545.7*antenna1['L1PCV'] - 1545.7*antenna1['L2PCV']),'b-d')
+        ax3.set_xlabel('Elevation Angle (degrees)')
+        ax3.set_ylabel('LC PCV (mm)')
+        ax3.set_xlim([0,90])
+        for item in ([ax3.title, ax3.xaxis.label, ax3.yaxis.label] +
+                    ax3.get_xticklabels() + ax3.get_yticklabels()):
+            item.set_fontsize(8)
+        fig3.tight_layout()
+        plt.savefig(outfile+'_LC.eps')
+
+    elif option.drp:
+        antenna1 = parseGEOPP(option.drp)
+        outfile = option.drp
+        outfile = re.sub(r'\.drp','',outfile)
+        outfile = re.sub(r'\.','_',outfile)
+        
+        az = np.linspace(0,355,72)
+        zz = np.linspace(0,90,19)
+
+        cmap = cm.get_cmap('YlOrRd', 3)
+
+        fig = plt.figure(figsize=(3.62, 2.76))
+        ax = fig.add_subplot(111,polar=True)
+        ax.set_theta_direction(-1)
+        ax.set_theta_offset(np.radians(90.))
+        ax.set_ylim([0,1])
+        ax.set_rgrids((0.00001, np.radians(20)/np.pi*2, np.radians(40)/np.pi*2,np.radians(60)/np.pi*2,np.radians(80)/np.pi*2),labels=('0', '20', '40', '60', '80'),angle=180)
+
+        iCtr = 0
+        for a in az:
+            jCtr = 0
+            for z in zz:
+                polar = ax.scatter(np.radians(a), np.radians(90.-z)/np.pi*2., c=np.abs(antenna1['L1PCV'][iCtr,jCtr]*1000), 
+                                    s=50, alpha=1., cmap=cmap, vmin=0, vmax=3, lw=0)
+                jCtr += 1
+            iCtr += 1
+
+        cbar = fig.colorbar(polar,shrink=0.75,pad=.10)
+        cbar.ax.tick_params(labelsize=8)
+        cbar.set_label('PCV (mm)',size=8)
+
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+            ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+
+        plt.tight_layout()
+        plt.savefig(outfile+'_polar_L1.eps')
+
+        fig = plt.figure(figsize=(3.62, 2.76))
+        ax = fig.add_subplot(111,polar=True)
+        ax.set_theta_direction(-1)
+        ax.set_theta_offset(np.radians(90.))
+        ax.set_ylim([0,1])
+        ax.set_rgrids((0.00001, np.radians(20)/np.pi*2, np.radians(40)/np.pi*2,np.radians(60)/np.pi*2,np.radians(80)/np.pi*2),labels=('0', '20', '40', '60', '80'),angle=180)
+
+        iCtr = 0
+        for a in az:
+            jCtr = 0
+            for z in zz:
+                polar = ax.scatter(np.radians(a), np.radians(90.-z)/np.pi*2., c=np.abs(antenna1['L2PCV'][iCtr,jCtr]*1000), 
+                                    s=50, alpha=1., cmap=cmap, vmin=0, vmax=3, lw=0)
+                jCtr += 1
+            iCtr += 1
+
+        cbar = fig.colorbar(polar,shrink=0.75,pad=.10)
+        cbar.ax.tick_params(labelsize=8)
+        cbar.set_label('PCV (mm)',size=8)
+
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+            ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+
+        plt.tight_layout()
+        plt.savefig(outfile+'_polar_L2.eps')
+
+        #plt.show()
+
+
+
     elif option.printFile:
         antenna1 = parseGEOPP(option.file1)
         if antenna1['dazi'] < 0.001 :
@@ -205,9 +325,9 @@ if __name__ == "__main__":
    
         fig = plt.figure(figsize=(3.62, 2.76))
         ax = fig.add_subplot(111) 
-        ax.plot(range(0,91,5),antenna1['L1PCV'],'b-d')
+        ax.plot(range(0,91,5),antenna1['L1PCV']*1000,'b-d')
         ax.set_xlabel('Elevation Angle (degrees)')
-        ax.set_ylabel('PCV (m)')
+        ax.set_ylabel('L1 PCV (mm)')
 
         if option.file2:
             antenna2 = parseGEOPP(option.file2)
@@ -229,9 +349,9 @@ if __name__ == "__main__":
 
         fig2 = plt.figure(figsize=(3.62, 2.76))
         ax2 = fig2.add_subplot(111) 
-        ax2.plot(range(0,91,5),antenna1['L2PCV'],'b-d')
+        ax2.plot(range(0,91,5),antenna1['L2PCV']*1000.,'b-d')
         ax2.set_xlabel('Elevation Angle (degrees)')
-        ax2.set_ylabel('PCV (mm)')
+        ax2.set_ylabel('L2 PCV (mm)')
 
         if option.file2:
             ax2.plot(range(0,91,5),antenna2['L2PCV'],'r-^')
@@ -252,13 +372,6 @@ if __name__ == "__main__":
         # Now calculate the LC difference
         fig3 = plt.figure(figsize=(3.62, 2.76))
         ax3 = fig3.add_subplot(111) 
-
-        # Only need this bit if I want to output the coords to stdout
-        #ctr = 0
-        #for ele in range(0,91,5) :
-        #    print("{:02d} {}".format(ele,(2.5457*antenna1['L1PCV'][ctr] - 1.5457*antenna1['L2PCV'][ctr])))
-        #    ctr += 1
-
         #ax3.plot(range(0,91,5),(2.5457*antenna1['L1PCV'] - 1.5457*antenna1['L2PCV']),'b-d')
         ax3.plot(range(0,91,5),(2545.7*antenna1['L1PCV'] - 1545.7*antenna1['L2PCV']),'b-d')
         ax3.set_xlabel('Elevation Angle (degrees)')
@@ -281,4 +394,4 @@ if __name__ == "__main__":
 
         fig3.tight_layout()
 
-    plt.show()
+    #plt.show()

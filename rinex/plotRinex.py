@@ -88,7 +88,7 @@ for epoch in obs['epochs'] :
 
         if satData[s1col] > 0 :
             ax.scatter(El,satData[s1col])
-            polar = ax2.scatter(np.radians(Az), np.radians(90.-El)/np.pi*2., c=satData[s1col] ,s=1,alpha=1., cmap=cm.RdBu,vmin=30,vmax=60, lw=0)
+            polar = ax2.scatter(np.radians(Az), np.radians(90.-El)/np.pi*2., c=satData[s1col] ,s=50,alpha=1., cmap=cm.RdBu,vmin=30,vmax=60, lw=0)
             #print("S1:",satData[s1col])
 
 
