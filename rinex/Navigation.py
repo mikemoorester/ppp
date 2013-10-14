@@ -28,29 +28,30 @@ def parseNavData(nav,line):
     line = line.rstrip()
 
     if epochRGX.search(line):
-        epoch = {}
-        epoch['data'] = []
+#       epoch = {}
+#       epoch['data'] = []
 
-        SV = int(line[0:2])
-        YY = int(line[3:5])
-        MM = int(line[6:8])
-        DD = int(line[9:11])
-        hh = int(line[12:14])
-        mm = int(line[15:17])
-        ss = int(line[18:20])
-        ms = int(line[21:22])
+#       SV = int(line[0:2])
+#       YY = int(line[3:5])
+#       MM = int(line[6:8])
+#       DD = int(line[9:11])
+#       hh = int(line[12:14])
+#       mm = int(line[15:17])
+#       ss = int(line[18:20])
+#       ms = int(line[21:22])
 
-        if YY < 80:
-            YYYY = YY + 2000
-        else:
-            YYYY = YY + 1900
+#       if YY < 80:
+#           YYYY = YY + 2000
+#       else:
+#           YYYY = YY + 1900
 
-        epoch['prn'] = SV
-        epoch['time'] = dt.datetime(YYYY,MM,DD,hh,mm,ss,ms)
-        epoch['data'].append( expDtofloat(line[22:41]) )
-        epoch['data'].append( expDtofloat(line[41:60]) )
-        epoch['data'].append( expDtofloat(line[60:79]) )
-        nav['epochs'].append(epoch)
+#       epoch['prn'] = SV
+#       epoch['time'] = dt.datetime(YYYY,MM,DD,hh,mm,ss,ms)
+#       epoch['data'].append( expDtofloat(line[22:41]) )
+#       epoch['data'].append( expDtofloat(line[41:60]) )
+#       epoch['data'].append( expDtofloat(line[60:79]) )
+#       nav['epochs'].append(epoch)
+        parseNavEpoch(nav,line)
     else:
         epoch = nav['epochs'][-1]
         l = len(line)
@@ -63,6 +64,52 @@ def parseNavData(nav,line):
         if l > 78:
             epoch['data'].append(expDtofloat(line[60:79]))
         
+    return 1
+
+def parseNavEpoch(nav,line):
+    """
+        parseNavEpoch(nav,line)
+
+        GPS and GLONASS nav files have the same format for the epoch line:
+
+     |PRN / EPOCH / SV CLK| - Satellite number:                      |     I2,    |
+     |                    |       Slot number in sat. constellation  |            |
+     |                    | - Epoch of ephemerides             (UTC) |            |
+     |                    |     - year (2 digits, padded with 0,     |   1X,I2.2, |
+     |                    |                if necessary)             |            |
+     |                    |     - month,day,hour,minute,             |  4(1X,I2), |
+     |                    |     - second                             |    F5.1,   |
+     |                    | - SV clock bias (sec)             (-TauN)|   D19.12,  |
+     |                    | - SV relative frequency bias    (+GammaN)|   D19.12,  |
+     |                    | - message frame time                 (tk)|   D19.12   |
+     |                    |   (0 .le. tk .lt. 86400 sec of day UTC)  |            |
+
+    """
+
+    epoch = {}
+    epoch['data'] = []
+
+    SV = int(line[0:2])
+    YY = int(line[3:5])
+    MM = int(line[6:8])
+    DD = int(line[9:11])
+    hh = int(line[12:14])
+    mm = int(line[15:17])
+    ss = int(line[18:20])
+    ms = int(line[21:22])
+
+    if YY < 80:
+        YYYY = YY + 2000
+    else:
+        YYYY = YY + 1900
+
+    epoch['prn'] = SV
+    epoch['time'] = dt.datetime(YYYY,MM,DD,hh,mm,ss,ms)
+    epoch['data'].append( expDtofloat(line[22:41]) )
+    epoch['data'].append( expDtofloat(line[41:60]) )
+    epoch['data'].append( expDtofloat(line[60:79]) )
+    nav['epochs'].append(epoch)
+
     return 1
 
 def getFrame(sat,Ntime,nav):
