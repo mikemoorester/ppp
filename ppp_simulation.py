@@ -8,6 +8,7 @@ from scipy import sparse
 from scipy import interpolate
 
 import array
+import datetime as dt
 
 import matplotlib.pyplot as plt
 
@@ -16,7 +17,7 @@ import multipath as mp
 import broadcastNavigation as bcast
 import geodetic as geod
 import vmf1 
-import rinex.Navigation as nav
+import rinex.Navigation as rnxN 
 
 # this is now under antenna/residuals.py
 import sys
@@ -74,6 +75,10 @@ parser.add_option( "--nt", "--noTropEst", dest="tropEst", help="Turn Off Troposp
 parser.add_option( "--nc", "--noClock", dest="clockEst", help="Turn Off Receiver Clock Estimation",
                     action="store_false", default=True )
 
+parser.add_option( "--YYYY", dest="YYYY", default=2012, help="Start Year for simulation (2012)")
+parser.add_option( "--MM", dest="MM", default=01, help="Start Month for simulation (01) range is from 01 to 12")
+parser.add_option( "--DD", dest="DD", default=01, help="Start Day for simulation (01), range if from 01 to 31")
+parser.add_option( "--DDD", dest="DDD", default=0, help="Start Day for simulation rom the DoY (001), range if from 01 to 366")
 #=======================
 # Multipath parameters
 
@@ -117,7 +122,7 @@ parser.add_option("--PR", dest='print_residuals', default=False, action="store_t
 (option,args) = parser.parse_args()
 
 #=================================
-vel_c = 299792458 # vacuum speed of light, m/s
+vel_c = 299792458. # vacuum speed of light, m/s
 
 if option.filename :
     filename = option.filename
@@ -215,9 +220,18 @@ MAXOBS = int( sess/SAMP * MAXSAT * NDAYS) #30000
 BIN = option.BIN 
 
 # Set start time and end time (based on NDAYS)
-YYYY = 2012
-MM = 01
-DD = 01
+YYYY = option.YYYY
+
+if option.DDD:
+    MM   = 1 
+    DD   = 1
+    startDT = dt.datetime(YYYY,MM,DD)
+    startDT = startDT + dt.timedelta(days=(int(option.DDD) -1)) 
+else:
+    MM   = option.MM
+    DD   = option.DD
+    startDT = dt.datetime(YYYY,MM,DD)
+
 
 startymdhms = gpst.cal2jd(YYYY,MM,DD+(00/24)+(00/(24*60))+(00.0000/(24*3600))) #user setting
 stopymdhms = startymdhms + NDAYS #gpst.cal2jd(YYYY,MM,DD+(((24*NDAYS)-1)/24)+(59/(24*60))+(59.999/(24*3600))) #user setting
@@ -234,14 +248,6 @@ ditr = 0
 # this will ensure we can have multiple days
 
 while startymdhms < stopymdhms :
-
-    # class option:
-    #nav1 = BroadcastNavigation()
-    #print nav1
-    #nfile = nav1.navfile()
-    #nav1.navfile("brdc1010.12n") # set doesn;t seem to work?
-    #print nfile
-
     # Parameter values
     #
     # users should only need to modify delta and nextest
@@ -264,7 +270,7 @@ while startymdhms < stopymdhms :
     north_delta   = 86400 
     north_nest    = round((time_stop_jd - time_start_jd)*(86400/north_delta))
     north_nextest = time_start_jd
-    print("NORTH_NEST :", north_nextest)
+    #print("NORTH_NEST :", north_nextest)
     north_count   = 0
     north_time    = []
     A_north = sparse.lil_matrix( (MAXOBS,north_nest) )
@@ -425,10 +431,12 @@ while startymdhms < stopymdhms :
     #navfile = 'brdc'+str(doy)+'0.'+str(yy)+'n.nav'
     navfile = 'brdc'+str(doy)+'0.'+str(yy)+'n'
     #ndata = nav.parseNavData('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile) #brdc0010.12n.nav')
-    ndata = nav.parseFile('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile) #brdc0010.12n.nav')
+    #ndata = nav.parseFile('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile) #brdc0010.12n.nav')
+    #ndata = nav.parseFile('/Users/moore/code/matlab/king/mikemoore/brdc/'+navfile) #brdc0010.12n.nav')
     #ndata = bcast.get_binary_eph('/home/547/mjm547/code/ppp/test_data/'+navfile)#brdc0010.12n.nav')
     #ndata = bcast.get_binary_eph('/Users/moore/code/matlab/king/mikemoore/brdc/brdc0010.12n.nav')
     #ndata = bcast.get_binary_eph('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile)#brdc0010.12n.nav')
+    nav = rnxN.parseFile('/Users/moore/code/matlab/king/mikemoore/brdc/'+navfile)
 
     ep = np.linspace(time_start_jd,time_stop_jd,num=86400./SAMP)
     sat = np.zeros(MAXSAT)
@@ -493,12 +501,16 @@ while startymdhms < stopymdhms :
         # find out what satellite elevation angles are for the site
         for sv in range(1,MAXSAT+1):  #some of this loop is done more times than needed
             skey = str(sv)
-            satD[skey]['col'] = bcast.find_eph(ndata,sv,gpssow) #FIND_EPH  Finds the proper column in ephemeris array  
+            #satD[skey]['col'] = bcast.find_eph(ndata,sv,gpssow) #FIND_EPH  Finds the proper column in ephemeris array  
+            satD[skey]['col'] = 1 
 
             if (satD[skey]['col'] > -1 ):
                 # SATPOS Calculation of X,Y,Z coordinates at time t
-                satD[skey]['pos'] = bcast.satpos(satD[skey]['col'],ndata,gpssow) 
- 
+                #satD[skey]['pos'] = bcast.satpos(satD[skey]['col'],ndata,gpssow) 
+                # dt is a datetime object for the timestamp you want to find the satellites postion
+                #[gpsweek,gpssow,nul] = gpst.jd2gps(epoch_time)
+                satD[skey]['pos'] = rnxN.satpos(sv,startDT,nav)
+
                 dx1 = satD[skey]['pos'] - sit1['XYZ']
                 dx2 = satD[skey]['pos'] - sit2['XYZ']
 
@@ -669,6 +681,8 @@ while startymdhms < stopymdhms :
             # increment obs counter (end of epoch loop)
             obs_count = obs_count +1
 
+        startDT = startDT + dt.timedelta(seconds=option.sampling)
+
     #======
     # End of the day loop
     startymdhms += 1.
@@ -748,28 +762,12 @@ while startymdhms < stopymdhms :
     #%% Matrix setup now complete
 
     #%% Invert Matrix
-    #print('\nNow inverting for the final solution and covariance\n\n')
     Qx = np.linalg.pinv(A_full.todense().T * P.todense() * A_full.todense() )
-    #print("Qx",Qx.shape)
-    #print("Now calculating dx")
     dx = Qx *A_full.todense().T * P.todense() * b.T
     
-    #print("dx:",dx.shape,dx.size,dx)
-    #print("north", north_count)
-    #print("east", east_count)
-    #print("up", up_count)
-    #print("trop", trop_count)
-    #print("harmonics", harm_count)
-    #print("Sync Count",sync_count)
-    #print("Calculating the residuals:")
     vfull = A_full.todense() * dx - b.T
 
-    #print("\nvfull",vfull.shape)
-    #print("v_El",v_El.shape)
-
     if NDAYS > 1 :
-        #print("BEFORE: v_El_total",v_El_total.shape,"v_El",v_El.shape)
-        #print("BEFORE: v_full_total",v_full_total.shape,"vfull",vfull.shape)
         if ditr > 0:
             v_El_total   = np.concatenate((v_El_total, v_El), axis=1)
             v_full_total = np.concatenate((v_full_total, vfull), axis=0)
@@ -777,10 +775,6 @@ while startymdhms < stopymdhms :
             v_El_total   = v_El
             v_full_total = vfull
 
-        #print("AFTER: v_El_total",v_El_total.shape,"v_El",v_El.shape)
-        #print("AFTER: v_full_total",v_full_total.shape,"vfull",vfull.shape)
-        #v_full_total.append(vfull[:,0])
-        #v_El_total.append(v_El[:])
 	if (option.print_daily) :
 	    DITR = str(ditr)
 	    fid = open(filename,"a")
@@ -803,7 +797,7 @@ while startymdhms < stopymdhms :
         #del vfull, v_El
     # End of the day loop
 
-print("NDAYS:",NDAYS)
+#print("NDAYS:",NDAYS)
 
 if NDAYS > 1 :
     #print("\nvfull - total",np.shape(v_full_total))
@@ -929,6 +923,9 @@ rms = np.sqrt(mtmp)
 fid = open(filename,"a")
 fid.write(str(NDAYS))
 fid.write(' ')
+startDT = startDT - dt.timedelta(days=1)
+fid.write(startDT.strftime("%Y %j %H:%M:%S"))
+fid.write(' ')
 fid.write(str(HEIGHT))
 fid.write(' ')
 
@@ -960,6 +957,9 @@ fid.write(str(lat))
 fid.write(' ')
 # write out the multipath function called
 fid.write('moore')
+#fid.write(' ')
+#startDT = startDT - dt.timedelta(days=1)
+#fid.write(startDT.strftime("%Y %j %H:%M:%S"))
 fid.write('\n')
 fid.close()
 

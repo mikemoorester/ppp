@@ -134,6 +134,8 @@ if __name__ == "__main__":
     parser.add_option("-d","--diff", dest="difference",action='store_true',default=False,help="Reference Antenna")
     parser.add_option("-r","--ref", dest="refAntenna", help="Reference Antenna")
     parser.add_option("-p","--print", dest="printFile",action='store_true',default=False,help="Print Difference")
+    
+    parser.add_option("-q","--quiet", dest="quiet",action='store_true',default=False,help="Don't show the plots")
 
     parser.add_option("-f","--f1", dest="file1", help="Reference Antenna")
     parser.add_option("--f2", dest="file2", help="Reference Antenna")
@@ -192,12 +194,15 @@ if __name__ == "__main__":
         outfile = re.sub(r'\.dre','',outfile)
         outfile = re.sub(r'\.','_',outfile)
 
+        # draw a horizontal line for the tollerance allowed
+        toll = 1
+
         fig = plt.figure(figsize=(3.62, 2.76))
         ax = fig.add_subplot(111) 
         ax.plot(range(0,91,5),antenna1['L1PCV']*1000,'b-d')
-        ax.plot([0,90],[2,2],'r--')
+        ax.plot([0,90],[toll,toll],'r--')
         ax.plot([0,90],[0,0],'k-')
-        ax.plot([0,90],[-2,-2],'r--')
+        ax.plot([0,90],[-toll,-toll],'r--')
         ax.set_xlabel('Elevation Angle (degrees)')
         ax.set_ylabel('L1 PCV (mm)')
         for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
@@ -209,9 +214,9 @@ if __name__ == "__main__":
         fig2 = plt.figure(figsize=(3.62, 2.76))
         ax2 = fig2.add_subplot(111) 
         ax2.plot(range(0,91,5),antenna1['L2PCV']*1000.,'b-d')
-        ax2.plot([0,90],[2,2],'r--')
+        ax2.plot([0,90],[toll,toll],'r--')
         ax2.plot([0,90],[0,0],'k-')
-        ax2.plot([0,90],[-2,-2],'r--')
+        ax2.plot([0,90],[-toll,-toll],'r--')
         ax2.set_xlabel('Elevation Angle (degrees)')
         ax2.set_ylabel('L2 PCV (mm)')
         for item in ([ax2.title, ax2.xaxis.label, ax2.yaxis.label] +
@@ -394,4 +399,5 @@ if __name__ == "__main__":
 
         fig3.tight_layout()
 
-    #plt.show()
+    if not option.quiet : 
+        plt.show()
