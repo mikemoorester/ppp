@@ -82,6 +82,7 @@ def parseGEOPP(geoppFile):
             elif varL2RGX.search(line) :
                 L2flag = 1
                 ObsCtr = 0
+                print("started the L2 obs")
             elif L1flag == 1:
                 tmp = np.array(s.split(line))
                 #check that all of the data has been read in before reseting the flag
@@ -119,7 +120,7 @@ def parseGEOPP(geoppFile):
                     if ObsCtr == (int(360./antenna['dazi']) + 1):
                         L2flag = 0
                         ObsCtr = 0
-                L2flag = 0
+                #L2flag = 0
 
     return antenna
 
@@ -244,7 +245,7 @@ if __name__ == "__main__":
         outfile = re.sub(r'\.drp','',outfile)
         outfile = re.sub(r'\.','_',outfile)
         
-        az = np.linspace(0,355,72)
+        az = np.linspace(0,360,73)
         zz = np.linspace(0,90,19)
 
         cmap = cm.get_cmap('YlOrRd', 3)
