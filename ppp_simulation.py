@@ -17,12 +17,9 @@ import multipath as mp
 import broadcastNavigation as bcast
 import geodetic as geod
 import vmf1 
-import rinex.Navigation as rnxN 
 
-# this is now under antenna/residuals.py
-import sys
-sys.path.append('antenna/')
-import residuals as res
+import rinex.Navigation as rnxN 
+import antenna.residuals as res
 
 #=================================
 from optparse import OptionParser
@@ -220,7 +217,7 @@ MAXOBS = int( sess/SAMP * MAXSAT * NDAYS) #30000
 BIN = option.BIN 
 
 # Set start time and end time (based on NDAYS)
-YYYY = option.YYYY
+YYYY = int(option.YYYY)
 
 if option.DDD:
     MM   = 1 
@@ -429,14 +426,17 @@ while startymdhms < stopymdhms :
     (year, doy) = gpst.jd2doy(startymdhms)
     yy = gpst.yyyy2yy(year)
     #navfile = 'brdc'+str(doy)+'0.'+str(yy)+'n.nav'
-    navfile = 'brdc'+str(doy)+'0.'+str(yy)+'n'
+    #navfile = 'brdc'+str(doy)+'0.'+str(yy)+'n'
+    navfile = 'brdc'+str(doy)+'0.'+ ("%02d" % yy)  +'n'
     #ndata = nav.parseNavData('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile) #brdc0010.12n.nav')
     #ndata = nav.parseFile('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile) #brdc0010.12n.nav')
     #ndata = nav.parseFile('/Users/moore/code/matlab/king/mikemoore/brdc/'+navfile) #brdc0010.12n.nav')
     #ndata = bcast.get_binary_eph('/home/547/mjm547/code/ppp/test_data/'+navfile)#brdc0010.12n.nav')
     #ndata = bcast.get_binary_eph('/Users/moore/code/matlab/king/mikemoore/brdc/brdc0010.12n.nav')
     #ndata = bcast.get_binary_eph('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile)#brdc0010.12n.nav')
-    nav = rnxN.parseFile('/Users/moore/code/matlab/king/mikemoore/brdc/'+navfile)
+    #nav = rnxN.parseFile('/Users/moore/code/matlab/king/mikemoore/brdc/'+navfile)
+    nav = rnxN.parseFile('/short/dk5/brdc/'+str(YYYY)+'/'+navfile)
+    print('/short/dk5/brdc/'+str(YYYY)+'/'+navfile)
 
     ep = np.linspace(time_start_jd,time_stop_jd,num=86400./SAMP)
     sat = np.zeros(MAXSAT)
@@ -511,24 +511,28 @@ while startymdhms < stopymdhms :
                 #[gpsweek,gpssow,nul] = gpst.jd2gps(epoch_time)
                 satD[skey]['pos'] = rnxN.satpos(sv,startDT,nav)
 
-                dx1 = satD[skey]['pos'] - sit1['XYZ']
-                dx2 = satD[skey]['pos'] - sit2['XYZ']
+		if satD[skey]['pos'] is not None: # == -1 :
+		#if satD[skey]['pos'].any(): # == -1 :
+		#    print("Can' calc sat pos for sv:",sv)
+                #else:
+                    dx1 = satD[skey]['pos'] - sit1['XYZ']
+                    dx2 = satD[skey]['pos'] - sit2['XYZ']
 
-                # calculate azimuth, elevation to satellite
-                # used to compute inter-site satellite visibility only
-                (satD[skey]['Az1'],satD[skey]['El1'],satD[skey]['Dist1']) = bcast.topocent(sit1['XYZ'],dx1)
-                (satD[skey]['Az2'],satD[skey]['El2'],satD[skey]['Dist2']) = bcast.topocent(sit2['XYZ'],dx2)
+                    # calculate azimuth, elevation to satellite
+                    # used to compute inter-site satellite visibility only
+                    (satD[skey]['Az1'],satD[skey]['El1'],satD[skey]['Dist1']) = bcast.topocent(sit1['XYZ'],dx1)
+                    (satD[skey]['Az2'],satD[skey]['El2'],satD[skey]['Dist2']) = bcast.topocent(sit2['XYZ'],dx2)
 
-                # satellite pos needs correction due to earth rotation during travel time
-                # use strang and borre routine e_r_corr
-                satD[skey]['pos_rot1'] = bcast.earth_rot_corr(satD[skey]['Dist1']/vel_c, satD[skey]['pos'])
-                satD[skey]['pos_rot2'] = bcast.earth_rot_corr(satD[skey]['Dist2']/vel_c, satD[skey]['pos'])
+                    # satellite pos needs correction due to earth rotation during travel time
+                    # use strang and borre routine e_r_corr
+                    satD[skey]['pos_rot1'] = bcast.earth_rot_corr(satD[skey]['Dist1']/vel_c, satD[skey]['pos'])
+                    satD[skey]['pos_rot2'] = bcast.earth_rot_corr(satD[skey]['Dist2']/vel_c, satD[skey]['pos'])
 
-                dx1 = satD[skey]['pos_rot1'].T - sit1['XYZ']
-                dx2 = satD[skey]['pos_rot2'].T - sit2['XYZ']
+                    dx1 = satD[skey]['pos_rot1'].T - sit1['XYZ']
+                    dx2 = satD[skey]['pos_rot2'].T - sit2['XYZ']
 
-                (satD[skey]['Az1'],satD[skey]['El1'],satD[skey]['Dist1']) = bcast.topocent(sit1['XYZ'],dx1)
-                (satD[skey]['Az2'],satD[skey]['El2'],satD[skey]['Dist2']) = bcast.topocent(sit2['XYZ'],dx2)
+                    (satD[skey]['Az1'],satD[skey]['El1'],satD[skey]['Dist1']) = bcast.topocent(sit1['XYZ'],dx1)
+                    (satD[skey]['Az2'],satD[skey]['El2'],satD[skey]['Dist2']) = bcast.topocent(sit2['XYZ'],dx2)
 
         amb = {}
         amb['time'] = np.zeros(MAXSAT+1)
@@ -543,7 +547,7 @@ while startymdhms < stopymdhms :
                 #initialise the last time this sat was seen
                 satD[skey]['lastepoch'] = 0
              
-            if(satD[skey]['col'] > -1):
+            if(satD[skey]['col'] > -1 and 'El1' in satD[skey] and 'El2' in satD[skey]):
 #               %check if the Elevation angle is above the cutoff at both sites AND no obstruction 
 #               % - if it is, it is an SD observation
                 #print("Made it",epoch_time,skey,gpssow)
