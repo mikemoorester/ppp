@@ -67,32 +67,6 @@ if option.lat :
     ax.set_xlabel('Latitude (degrees)')
     ax.set_xlim([-90, 90])
     ax.set_ylabel('RMS  (mm)')
-elif option.up :
-    if option.filename3:
-        data3 = np.genfromtxt(option.filename3)
-        ind3 = np.argsort(data3[:,1])
-
-        data2 = np.genfromtxt(option.filename2)
-        ind2 = np.argsort(data2[:,1])
-
-        ax.plot(data[ind,1], data[ind,5]*1000.,'b',linewidth=2)
-        ax.plot(data2[ind2,1], data2[ind2,5]*1000.,'r',linewidth=2)
-        ax.plot(data3[ind3,1], data3[ind3,5]*1000.,'k',linewidth=2)
-        ax.legend([option.legend1,option.legend2,option.legend3],fontsize=8,loc=0)
-    elif option.filename2:
-        data2 = np.genfromtxt(option.filename2)
-        ind2 = np.argsort(data2[:,1])
-        if option.diff:
-            diff = []
-            ax.plot(data[ind,1], ( np.abs(data[ind,5]) - np.abs(data2[ind2,5]) )*1000.,linewidth=2)
-        else:
-            ax.plot(data[ind,1], data[ind,5]*1000.,linewidth=2)
-            ax.plot(data2[ind2,1], data2[ind2,5]*1000.,linewidth=2)
-    else:
-        ax.plot(data[ind,1], data[ind,5]*1000.,linewidth=2)
-
-    ax.plot([0,2.0],[0,0],'k--')
-    ax.set_ylabel('Height Bias (mm)')
 elif option.filename3 :
     data2 = np.genfromtxt(option.filename2)
     data3 = np.genfromtxt(option.filename3)
@@ -129,10 +103,13 @@ else:
     # year = data[ind,1]
     # DoY = data[ind,2]
     # HH:MM:SS data[ind,3]
-    # h = data[ind,4]
+    # h = data[ind,4]       height of monument
     # rms = data[ind,5]
+    # north_bias = data[ind,6]
+    # east_bias  = data[ind,7]
+    # up_bias    = data[ind,8]
     #
-    criterion = (data[:,4] == 1.20)
+    criterion = (data[:,4] == 0.20)
     ind = np.array(np.where(criterion))
     time = [] #np.zeros(data.shape[0])
     ctr = 0
@@ -141,10 +118,14 @@ else:
         time[ctr] = time[ctr] + dt.timedelta(days=(int(data[ctr,2]) -1))
         ctr += 1
 
+    # set the default for the rms of residuals?
+    FEATURE = 5
+    if option.up:
+        FEATURE = 8
+ 
     # format the ticks
     time = np.array(time)
-    #ax.plot_date(time[ind,], data[ind,5]) 
-    ax.plot_date(time[ind,], data[ind,5]) 
+    ax.plot_date(time[ind,], data[ind,FEATURE]) 
 
     years    = YearLocator()   # every year
     months   = MonthLocator()  # every month
