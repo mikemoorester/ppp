@@ -223,14 +223,19 @@ if option.DDD:
     MM   = 1 
     DD   = 1
     startDT = dt.datetime(YYYY,MM,DD)
+    print("Start Date:",startDT)
+    print("Option DDD:",option.DDD)
     startDT = startDT + dt.timedelta(days=(int(option.DDD) -1)) 
+    print("After timeDelta startDT:",startDT)
+    MM = startDT.strftime("%m")
+    DD = startDT.strftime("%d")
 else:
     MM   = option.MM
     DD   = option.DD
     startDT = dt.datetime(YYYY,MM,DD)
 
 
-startymdhms = gpst.cal2jd(YYYY,MM,DD+(00/24)+(00/(24*60))+(00.0000/(24*3600))) #user setting
+startymdhms = gpst.cal2jd(YYYY,int(MM),int(DD)+(00/24)+(00/(24*60))+(00.0000/(24*3600))) #user setting
 stopymdhms = startymdhms + NDAYS #gpst.cal2jd(YYYY,MM,DD+(((24*NDAYS)-1)/24)+(59/(24*60))+(59.999/(24*3600))) #user setting
 
 amb_count = 0
@@ -435,8 +440,9 @@ while startymdhms < stopymdhms :
     #ndata = bcast.get_binary_eph('/Users/moore/code/matlab/king/mikemoore/brdc/brdc0010.12n.nav')
     #ndata = bcast.get_binary_eph('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile)#brdc0010.12n.nav')
     #nav = rnxN.parseFile('/Users/moore/code/matlab/king/mikemoore/brdc/'+navfile)
-    nav = rnxN.parseFile('/short/dk5/brdc/'+str(YYYY)+'/'+navfile)
-    print('/short/dk5/brdc/'+str(YYYY)+'/'+navfile)
+    nav = rnxN.parseFile('/Users/moore/code/matlab/king/mikemoore/brdc/'+navfile)
+    #nav = rnxN.parseFile('/short/dk5/brdc/'+str(YYYY)+'/'+navfile)
+    #print('/short/dk5/brdc/'+str(YYYY)+'/'+navfile)
 
     ep = np.linspace(time_start_jd,time_stop_jd,num=86400./SAMP)
     sat = np.zeros(MAXSAT)
