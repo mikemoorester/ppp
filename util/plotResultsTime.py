@@ -122,6 +122,7 @@ else:
     FEATURE = 5
     if option.up:
         FEATURE = 8
+        ax.set_ylabel('Height Bias(m)')
  
     # format the ticks
     time = np.array(time)

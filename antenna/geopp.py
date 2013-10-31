@@ -124,6 +124,51 @@ def parseGEOPP(geoppFile):
 
     return antenna
 
+#==============================================================================
+
+def parseSummaryFile(sumFile) :
+    '''
+
+    parseSummaryFile(sumFile) - reads the table output from the program antdpcv
+
+    with the following format:
+    # f   el     Min      Max      Mean    AbsMean  Std.dev. AccStd.dev. [m]
+
+    This will then be parsed into a datastructure as follows:
+
+    data['f'][0] => el
+    data['f'][1] => Min
+    data['f'][2] => Max
+    data['f'][3] => Mean
+    data['f'][4] => AbsMean
+    data['f'][5] => Std.dev.
+    data['f'][6] => AccStd.dev
+
+    where f if either L1, L2 or L0 (ionosphere free combination)
+
+    '''
+
+    dataBlock = {}
+    dataBlock['L1'] = np.zeros((int(90./5.)+1,7))
+    dataBlock['L2'] = np.zeros((int(90./5.)+1,7))
+    dataBlock['L0'] = np.zeros((int(90./5.)+1,7))
+    ctr = 0
+
+    with open(sumFile) as f:
+        for line in f:
+            line = line.rstrip()
+            data = np.array(s.split(line))
+            dataBlock[data[0]][ctr] = data[1:]
+
+            if ctr == int(90./5.):
+                ctr = 0
+            else:
+                ctr += 1
+
+    return dataBlock
+
+#==============================================================================
+
 if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
@@ -151,6 +196,9 @@ if __name__ == "__main__":
     parser.add_option("--dre", dest="dre", help="Difference in Elevation file")
     #parser.add_option("--dre", dest="dre", action='store_true', default=False, help="Difference in Elevation file")
     parser.add_option("--drp", dest="drp", help="Difference in Elevation/Azimuth file")
+
+    parser.add_option("--sum", dest="sum", help="Plot the summary statistics output by antdpcv --sum <file>")
+
     (option,args) = parser.parse_args()
 
     if option.difference:
@@ -304,10 +352,6 @@ if __name__ == "__main__":
         plt.tight_layout()
         plt.savefig(outfile+'_polar_L2.eps')
 
-        #plt.show()
-
-
-
     elif option.printFile:
         antenna1 = parseGEOPP(option.file1)
         if antenna1['dazi'] < 0.001 :
@@ -325,7 +369,151 @@ if __name__ == "__main__":
                             (2.5457*antenna1['L1PCV'][ictr][jctr] - 1.5457*antenna1['L2PCV'][ictr][jctr])))
                     jctr += 1
                 ictr +=1
-                
+
+    elif option.sum:
+        outfile = option.sum
+        outfile = re.sub(r'\.sum','',outfile)
+        outfile = re.sub(r'\.','_',outfile)
+        # f   el     Min      Max      Mean    AbsMean  Std.dev. AccStd.dev. [m]
+        data = parseSummaryFile(option.sum)
+
+        # set a tollerance of 1 mm
+        toll = 1
+
+        # Plot the mean, minimum and maximum values vs elevation
+        # Plot the L1 frequency
+        fig1 = plt.figure(figsize=(3.62, 2.76))
+        ax = fig1.add_subplot(111)
+
+        ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=[data['L1'][:,1]*1000., data['L1'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
+        ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=data['L1'][:,5]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+
+        # plot the tolerances acceptable by the ATWG
+        ax.plot([-5,90],[toll,toll],'r--')
+        ax.plot([-5,90],[-toll,-toll],'r--')
+        ax.set_xlim([-5,90])
+        ax.set_xlabel('Elevation Angle (degrees)')
+        ax.set_ylabel('Difference in Absolute PCV (mm)')
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+            ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+
+        plt.tight_layout()
+        plt.savefig(outfile+'_summary_L1.eps')
+
+        # Plot the L2 frequency
+        fig2 = plt.figure(figsize=(3.62, 2.76))
+        ax2 = fig2.add_subplot(111)
+
+        ax2.errorbar( data['L2'][:,0], data['L2'][:,3]*1000, yerr=[data['L2'][:,1]*1000., data['L2'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
+        ax2.errorbar( data['L2'][:,0], data['L2'][:,3]*1000, yerr=data['L2'][:,5]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+
+        ax2.plot([-5,90],[toll,toll],'r--')
+        ax2.plot([-5,90],[-toll,-toll],'r--')
+        ax2.set_xlim([-5,90])
+        ax2.set_xlabel('Elevation Angle (degrees)')
+        ax2.set_ylabel('Difference in Absolute PCV (mm)')
+        for item in ([ax2.title, ax2.xaxis.label, ax2.yaxis.label] +
+            ax2.get_xticklabels() + ax2.get_yticklabels()):
+            item.set_fontsize(8)
+        plt.tight_layout()
+        plt.savefig(outfile+'_summary_L2.eps')
+
+        # Plot the LC frequency
+        fig3 = plt.figure(figsize=(3.62, 2.76))
+        ax3 = fig3.add_subplot(111)
+
+        ax3.errorbar( data['L0'][:,0], data['L0'][:,3]*1000, yerr=[data['L0'][:,1]*1000., data['L0'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
+        ax3.errorbar( data['L0'][:,0], data['L0'][:,3]*1000, yerr=data['L0'][:,5]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        
+        ax3.plot([-5,90],[toll,toll],'r--')
+        ax3.plot([-5,90],[-toll,-toll],'r--')
+
+        ax3.set_xlim([-5,90])
+        ax3.set_xlabel('Elevation Angle (degrees)')
+        ax3.set_ylabel('Difference in Absolute PCV (mm)')
+
+        for item in ([ax3.title, ax3.xaxis.label, ax3.yaxis.label] +
+            ax3.get_xticklabels() + ax3.get_yticklabels()):
+            item.set_fontsize(8)
+        plt.tight_layout()
+        plt.savefig(outfile+'_summary_L0.eps')
+
+        #==============================
+        # Plot the absolute mean and accumulated standard Deviation
+        fig4 = plt.figure(figsize=(3.62, 2.76))
+        ax4 = fig4.add_subplot(111)
+        ax4.errorbar( data['L1'][:,0], data['L1'][:,4]*1000, yerr=data['L1'][:,6]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        ax4.plot([-5,90],[toll,toll],'r--')
+        ax4.set_xlim([-5,90])
+        ax4.set_xlabel('Elevation Angle (degrees)')
+        ax4.set_ylabel('Absolute Difference in Absolute PCV (mm)')
+        for item in ([ax4.title, ax4.xaxis.label, ax4.yaxis.label] +
+            ax4.get_xticklabels() + ax4.get_yticklabels()):
+            item.set_fontsize(8)
+        plt.tight_layout()
+        plt.savefig(outfile+'_abs_summary_L1.eps')
+
+        fig5 = plt.figure(figsize=(3.62, 2.76))
+        ax5 = fig5.add_subplot(111)
+        ax5.errorbar( data['L2'][:,0], data['L2'][:,4]*1000, yerr=data['L2'][:,6]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        ax5.plot([-5,90],[toll,toll],'r--')
+        ax5.set_xlim([-5,90])
+        ax5.set_xlabel('Elevation Angle (degrees)')
+        ax5.set_ylabel('Absolute Difference in Absolute PCV (mm)')
+        for item in ([ax5.title, ax5.xaxis.label, ax5.yaxis.label] +
+            ax5.get_xticklabels() + ax5.get_yticklabels()):
+            item.set_fontsize(8)
+        plt.tight_layout()
+        plt.savefig(outfile+'_abs_summary_L2.eps')
+
+        fig6 = plt.figure(figsize=(3.62, 2.76))
+        ax6 = fig6.add_subplot(111)
+        ax6.errorbar( data['L0'][:,0], data['L0'][:,4]*1000, yerr=data['L0'][:,6]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        ax6.plot([-5,90],[toll,toll],'r--')
+        ax6.set_xlim([-5,90])
+        ax6.set_xlabel('Elevation Angle (degrees)')
+        ax6.set_ylabel('Absolute Difference in Absolute PCV (mm)')
+        for item in ([ax6.title, ax6.xaxis.label, ax6.yaxis.label] +
+            ax6.get_xticklabels() + ax6.get_yticklabels()):
+            item.set_fontsize(8)
+        plt.tight_layout()
+        plt.savefig(outfile+'_abs_summary_L0.eps')
+
+        # f   el     Min      Max      Mean    AbsMean  Std.dev. AccStd.dev. [m]
+        # Save the data block as a LATEX table
+        latexFile = outfile + '.tex'
+        f1=open(latexFile, 'w') 
+        print('\\begin{table}[htbp]',file=f1)
+        print('\\centering',file=f1)
+        print('\\caption{}',file=f1)
+        print('\\label{tab:}',file=f1)
+        print('\\begin{footnotesize}',file=f1)
+        print('\\begin{tabular}{l c c c c c c c}',file=f1)
+        print('\\hline\\noalign{\\smallskip}',file=f1)
+        print('f & el  &  Min  &   Max  &   Mean &  AbsMean& Std.dev.&AccStd.dev. [mm]\\\\',file=f1)
+        print('\\hline',file=f1)
+
+        for key in ['L1','L2','L0']:
+            i = 0
+
+            for el in data[key][:,0]:
+                print('{:2s} & {:0.1f} & {:3.2f} & {:3.2f} & {:3.2f} & {:3.2f} & {:3.2f} & {:3.2f} \\\\'.format(key, el, 
+                                                                                                           data[key][i,1]*1000.,
+                                                                                                           data[key][i,2]*1000.,
+                                                                                                           data[key][i,3]*1000.,
+                                                                                                           data[key][i,4]*1000.,
+                                                                                                           data[key][i,5]*1000.,
+                                                                                                           data[key][i,6]*1000.,
+                                                                                                           ),file=f1 )
+                i += 1
+
+            print('\\hline',file=f1)
+
+        print('\\end{tabular}',file=f1)
+        print('\\end{footnotesize}',file=f1)
+        print('\\end{table}',file=f1)
+        f1.close()
     else:
         antenna1 = parseGEOPP(option.file1)
    
