@@ -20,6 +20,9 @@ parser.add_option("-e","--east",dest="east", action="store_true", default=False,
 parser.add_option("-u","--up",dest="up", action="store_true", default=False, help="Plot the up component") 
 parser.add_option("-t","--trop",dest="trop",type="int",default = 0,help="Plot n troposphere estimates")
 
+parser.add_option("--MH",dest="MH", default = 0.2, type=float, help="Monument height to plot")
+
+
 parser.add_option("--l1", "--legend1", dest="legend1", default="Data 1",
                                   help="Label for data being plotted to appear in the legend")
 
@@ -109,7 +112,8 @@ else:
     # east_bias  = data[ind,7]
     # up_bias    = data[ind,8]
     #
-    criterion = (data[:,4] == 0.20)
+    #criterion = (data[:,4] == 0.20)
+    criterion = (data[:,4] == option.MH)
     ind = np.array(np.where(criterion))
     time = [] #np.zeros(data.shape[0])
     ctr = 0
