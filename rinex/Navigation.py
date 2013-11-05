@@ -135,7 +135,10 @@ def getFrame(sat,Ntime,nav):
     diff = np.array(diff)
 
     # return the array which has the smallest absolute difference in time 
-    return(nav['epochs'][match[diff.argmin()]])
+    if diff.any():
+        return(nav['epochs'][match[diff.argmin()]])
+    else :
+        return -1
 
 def satpos(sat,Ntime,nav):
     '''
@@ -149,7 +152,11 @@ def satpos(sat,Ntime,nav):
     Omegae_dot = 7.2921151467e-5 # earth rotation rate, rad/s
 
     frame = getFrame(sat,Ntime,nav)
-   
+
+    # Check that a frame has been found  
+    if frame == -1:
+        return
+ 
     af0         = frame['data'][0]  # SV clock bias (seconds) 
     af1         = frame['data'][1]  # SV clock drift (sec/sec)
     af2         = frame['data'][2]  # clock drift rate (sec/sec2)
@@ -230,6 +237,115 @@ def satpos(sat,Ntime,nav):
     #import pdb
     #pdb.set_trace()
     return satp    
+
+#==============================================================================
+
+def satpos_iers(sat,Ntime,nav):
+    '''
+
+    satp = satpos(t,eph)
+
+    Calculation of X,Y,Z coordinates at time t
+    for a given ephemeris obtained from a navigation file
+    The ICD earth rotation has been replaced with an iers2003, which include
+    polar motion and precession, nutaiton etc. 
+    Uses some simplifications
+
+    '''
+
+    GM = 3.986005e14             # earth's universal gravitational m^3/s^2
+    Omegae_dot = 7.2921151467e-5 # earth rotation rate, rad/s
+
+    frame = getFrame(sat,Ntime,nav)
+   
+    af0         = frame['data'][0]  # SV clock bias (seconds) 
+    af1         = frame['data'][1]  # SV clock drift (sec/sec)
+    af2         = frame['data'][2]  # clock drift rate (sec/sec2)
+    
+    iode        = frame['data'][3]  # IODE Issue of data, Ephemeris
+    crs         = frame['data'][4]  # (meters)
+    deltan      = frame['data'][5]  # (radians/sec)
+    M0          = frame['data'][6]  # (radians)
+    
+    cuc         = frame['data'][7]  # (radians)
+    ecc         = frame['data'][8]  # eccentricity
+    cus         = frame['data'][9]  # (radians)
+    roota       = frame['data'][10]
+
+    toe         = frame['data'][11] # Time of Ephemeris (sec of GPS week)
+    cic         = frame['data'][12] # (radians)
+    Omega0      = frame['data'][13] # (radians)
+    cis         = frame['data'][14] # (radians)
+
+    i0          = frame['data'][15]  # (radians)
+    crc         = frame['data'][16]  # (metres)
+    omega       = frame['data'][17]  # (radians)
+    Omegadot    = frame['data'][18]  # (radians/sec)
+
+    idot        = frame['data'][19]  # (radians/sec)
+    codes       = frame['data'][20]  # codes on L2 channel
+    weekno      = frame['data'][21]  # gps week # to go with toe, continuous number not mod(1024)
+    L2flag      = frame['data'][22]  # L2 P data flag
+
+    svaccuracy  = frame['data'][23]  # sv accuracy
+    svhealth    = frame['data'][24]  # sv health
+    tgd         = frame['data'][25]  # TGD 
+    iodc        = frame['data'][26]  # IODC Issue of Data, Clock
+
+    # The next frame is not always in the navigation message, 
+    # might have the z-count, but not the rest of the fields
+    tom          = frame['data'][27]  # Transmission time of message from z-count in hand Over Word
+    #fitInt      = frame['data'][28]  # Fit Interval (hours)
+    #spare1      = frame['data'][29]  # spare
+    #spare2      = frame['data'][30]  # spare
+    #=============================================================
+    # Procedure for coordinate calculation
+    A = roota*roota
+    w,t = gpsT.dateTime2gpssow(Ntime)
+   
+    tk = t-toe
+
+    n0 = np.sqrt(GM/A**3)
+    n = n0+deltan
+    M = M0+n*tk
+
+    E = M
+    for i in range(0,10):
+        E_old = E
+        E = M+ ecc * np.sin(E)
+        dE = np.remainder(E-E_old,2*np.pi)
+        if abs(dE) < 1.e-12:
+            break
+
+    v = np.arctan2( np.sqrt(1.-ecc**2)*np.sin(E), np.cos(E)-ecc )
+    phi = v + omega
+
+    u = phi + cuc*np.cos(2.*phi) + cus*np.sin(2.*phi)
+    r = A*(1.-ecc*np.cos(E)) + crc*np.cos(2.*phi)+crs*np.sin(2.*phi)
+    i_1 = i0 + idot*tk + cic*np.cos(2.*phi) + cis*np.sin(2.*phi)
+    Omega = Omega0 + (Omegadot - Omegae_dot)*tk - Omegae_dot*toe
+
+    x1 = np.cos(u)*r
+    y1 = np.sin(u)*r
+    z1 = y1 * np.sin(i_1) # z1 =z according to the ICD
+
+    # now call the IERS terrestrial to celestial inertial rotation matrix
+#    RT2C = []
+#    RT2C = iers_QRW(mjd)
+#    RT2C = np.matrix(RT2C)
+
+#    satp = RT2C.T * np.array([x1 y1 z1])
+    #X = x1 * np.cos(Omega) - y1 * np.cos(i_1) * np.sin(Omega)
+    #Y = x1 * np.sin(Omega) + y1 * np.cos(i_1) * np.cos(Omega)
+    #Z = y1 * np.sin(i_1)
+
+    #satp = np.matrix([X,Y,Z])
+
+    # Should I be adding in the IERS terrestrial to celestial inertial rotation matrix??
+    #import pdb
+    #pdb.set_trace()
+    return satp    
+
 
 
 #=========================================================

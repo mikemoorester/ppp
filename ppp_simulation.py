@@ -72,6 +72,9 @@ parser.add_option( "--nt", "--noTropEst", dest="tropEst", help="Turn Off Troposp
 parser.add_option( "--nc", "--noClock", dest="clockEst", help="Turn Off Receiver Clock Estimation",
                     action="store_false", default=True )
 
+parser.add_option( "--nm", "--noMultipath", dest="noMP", help="Don't add any multipath bias",
+                    action="store_true", default=False )
+
 parser.add_option( "--YYYY", dest="YYYY", default=2012, help="Start Year for simulation (2012)")
 parser.add_option( "--MM", dest="MM", default=01, help="Start Month for simulation (01) range is from 01 to 12")
 parser.add_option( "--DD", dest="DD", default=01, help="Start Day for simulation (01), range if from 01 to 31")
@@ -223,14 +226,19 @@ if option.DDD:
     MM   = 1 
     DD   = 1
     startDT = dt.datetime(YYYY,MM,DD)
+    print("Start Date:",startDT)
+    print("Option DDD:",option.DDD)
     startDT = startDT + dt.timedelta(days=(int(option.DDD) -1)) 
+    print("After timeDelta startDT:",startDT)
+    MM = startDT.strftime("%m")
+    DD = startDT.strftime("%d")
 else:
     MM   = option.MM
     DD   = option.DD
     startDT = dt.datetime(YYYY,MM,DD)
 
 
-startymdhms = gpst.cal2jd(YYYY,MM,DD+(00/24)+(00/(24*60))+(00.0000/(24*3600))) #user setting
+startymdhms = gpst.cal2jd(YYYY,int(MM),int(DD)+(00/24)+(00/(24*60))+(00.0000/(24*3600))) #user setting
 stopymdhms = startymdhms + NDAYS #gpst.cal2jd(YYYY,MM,DD+(((24*NDAYS)-1)/24)+(59/(24*60))+(59.999/(24*3600))) #user setting
 
 amb_count = 0
@@ -382,6 +390,8 @@ while startymdhms < stopymdhms :
         mp_SIGMALC = np.zeros( ((int(360./GRID)+1),int(90./GRID)+1) )
         for i in range(0,360,int((360./GRID))+1):
             mp_SIGMALC[i,:] = tmp[:]
+    # 
+    # Add an observed residual file as the multipath bias
     elif option.residuals:
         if resFlag == 0:
             mp_SIGMALC = res.blockMedian(option.residualFile,GRID,1)
@@ -392,6 +402,10 @@ while startymdhms < stopymdhms :
             # order the matrix by elevation, rather than zenith angle 
             mp_SIGMALC = mp_SIGMALC[:,::-1]
             resFlag = 1
+    #
+    # No multipath Option:
+    elif option.noMP:
+        mp_SIGMALC = np.zeros( ((int(360./GRID)+1),int(90./GRID)+1) )
     else:
         mp_SIGMALC = mp.multipath_moore(SMOOTH,HEIGHT,ANTENNATYPE,REFRACTIVE,GRID,0)
 
@@ -435,8 +449,9 @@ while startymdhms < stopymdhms :
     #ndata = bcast.get_binary_eph('/Users/moore/code/matlab/king/mikemoore/brdc/brdc0010.12n.nav')
     #ndata = bcast.get_binary_eph('/Users/michael/code/matlab/king/mikemoore/brdc/'+navfile)#brdc0010.12n.nav')
     #nav = rnxN.parseFile('/Users/moore/code/matlab/king/mikemoore/brdc/'+navfile)
+    #nav = rnxN.parseFile('/Users/moore/code/matlab/king/mikemoore/brdc/'+navfile)
     nav = rnxN.parseFile('/short/dk5/brdc/'+str(YYYY)+'/'+navfile)
-    print('/short/dk5/brdc/'+str(YYYY)+'/'+navfile)
+    #print('/short/dk5/brdc/'+str(YYYY)+'/'+navfile)
 
     ep = np.linspace(time_start_jd,time_stop_jd,num=86400./SAMP)
     sat = np.zeros(MAXSAT)
@@ -740,13 +755,7 @@ while startymdhms < stopymdhms :
     del A_north, A_east, A_up, A_trop, A_amb, A_sync
 
     b = b[0:obs_count-1,:]
-    print("b shape:",np.shape(b))        
 
-    #%% Combine A sub-matrices
-    print("Afull shape:",np.shape(A_full))        
-
-    #%% Set up the weight matrix (Ql)
-    print("Setting up weight matrix")
     if(ELE_WEIGHT):
         P=sparse.diags((np.sin(np.radians(v_El)) + 0.000001)**2,0) #;%0.00001 avoids problems when elev = 0
     elif(GAMIT_WEIGHT):
