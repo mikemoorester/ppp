@@ -138,6 +138,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--plot',dest='plot', default=False, action='store_true')
     parser.add_argument('--polar',dest='polar', default=False, action='store_true')
     parser.add_argument('--elevation',dest='elevation', default=False, action='store_true')
+    parser.add_argument('--EM',dest='elevationMedian', default=False, action='store_true', help='Plot the Median s Elevation')
 
     args = parser.parse_args()
 
@@ -194,6 +195,28 @@ if __name__ == "__main__":
             ax.set_ylabel('PCV (mm)',fontsize=8)
             #ax.set_ylim([-15, 15])
 
+            for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+                          ax.get_xticklabels() + ax.get_yticklabels()):
+                item.set_fontsize(8)
+
+            plt.tight_layout()
+
+        if args.elevationMedian :
+            
+            zz = np.linspace(0,90,181)
+            #zz = np.linspace(0,90,19)
+            ele = 90. - zz[::-1]
+            # Do an elevation only plot
+            fig = plt.figure(figsize=(3.62, 2.76))
+            ax = fig.add_subplot(111)
+            med = np.median(aData,axis=0)
+            ax.plot(ele,med[::-1])
+            #for zen in aData :
+            #   ax.plot(ele,zen[::-1])
+            ax.set_xlabel('Elevation Angle (degrees)',fontsize=8)
+            ax.set_ylabel('PCV (mm)',fontsize=8)
+            ax.set_xlim([10, 90])
+            ax.set_ylim([-10, 5])
             for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
                           ax.get_xticklabels() + ax.get_yticklabels()):
                 item.set_fontsize(8)
