@@ -123,10 +123,10 @@ elif option.east :
     ax.plot(data[ind,1], data[ind,4]*1000.,linewidth=2)
     ax.set_ylabel('East Bias (mm)')
 elif option.trop > 0:
-    #idx = 4 + option.trop
-    for idx in range(6,option.trop+5):
+    rgx = int(24/option.trop)
+    for idx in range(6,rgx+6):
         ax.plot(data[ind,1], data[ind,idx]*100,'b.',alpha=0.7)
-    ax.set_ylabel('Troposphere Bias')
+    ax.set_ylabel('Troposphere Bias (m)')
 else:
     ax.plot(data[ind,1], data[ind,2],linewidth=2)
 
