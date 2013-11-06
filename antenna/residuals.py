@@ -234,7 +234,7 @@ if __name__ == "__main__":
     # Calculate the block median
     zz = np.linspace(0,90,181)
 
-    if option.elevationPlot :
+    if option.elevationMedianPlot :
         med,medStd,medrms = blockMedian(option.filename,0.5,0)
         # flip the array around so that is in order of elevation angle
         ele = 90. - zz[::-1]
@@ -243,7 +243,7 @@ if __name__ == "__main__":
         # Do an elevation only plot
         fig = plt.figure(figsize=(3.62, 2.76))
         ax = fig.add_subplot(111)
-        ax.plot(ele,med)
+        ax.plot(ele,np.median(med))
         ax.set_xlabel('Elevation Angle (degrees)',fontsize=8)
         ax.set_ylabel('Bias (mm)',fontsize=8)
         ax.set_ylim([-7.5, 7.5])
