@@ -12,7 +12,9 @@ def noApriori_position():
     """
 
     # Receiver position
-    Aguess = np.array([ 0, 0, 0])
+    #Aguess = np.array([ 0, 0, 0])
+    # should I have an initial guess for the receiver clock offset
+    Aguess = np.array([ -730000., -5440000., 3230000.])
 
     # satellite coordinates in ECEF XYZ from ephemeris parameters and SV time
     SatPos = np.array([
@@ -28,20 +30,24 @@ def noApriori_position():
 
     predictedRange = np.array(np.zeros(SatPos.shape[0]))
 
-    # predicted ranges from receiver position to SVs
+    # predicted ranges from receiver position to SV nav position
     ctr = 0
     for row in SatPos:
-        predictedRange[ctr] = np.sqrt(np.sum(np.square(row - Aguess)))
+        predictedRange[ctr] = np.sqrt( (row[0] - Aguess[0])**2 + 
+                                       (row[1] - Aguess[1])**2 + 
+                                       (row[2] - Aguess[2])**2  )
+
+        #predictedRange[ctr] = np.sqrt(np.sum(np.square(row - pseudorange[ctr])))
         ctr += 1    
    
-    print("Predicted Range",predictedRange,predictedRange.shape)
-    print("Aguess",Aguess,Aguess.shape) 
+#    print("Predicted Range",predictedRange,predictedRange.shape)
+#    print("Aguess",Aguess,Aguess.shape) 
  
     # Observed minus Computed
-    OMC = np.abs(pseudorange * 299792.458) - predictedRange
-    #OMC = np.abs(predictedRange * 299792.458) - Aguess.T
-
-    print("OMC",OMC,"shape:",OMC.shape)
+    #OMC = np.matrix( (pseudorange / 299792.458) - predictedRange )
+    #OMC = np.matrix( np.mod(pseudorange, 299792.458) - predictedRange )
+    #OMC = np.matrix( (predictedRange / 299792.458) - pseudorange )
+    OMC = np.matrix( np.mod(predictedRange, 299792.458) - pseudorange )
 
     # Solve for Correction to Receiver position estimates
     A = np.zeros((pseudorange.size,4))
@@ -54,12 +60,20 @@ def noApriori_position():
         A[ctr,3] = -1.
         ctr += 1
 
-    print("A",A,A.shape)
-    print("OMC",OMC,OMC.shape)
-    #dR = (npl.pinv(A.T * A) * A.T) * OMC.T
-    dR = npl.pinv(A.transpose() * A) * A.transpose() * OMC
-    print("dR",dR,dR.shape)
-    
+    dR = ((npl.pinv((A.T) * A) ) * A.T) * OMC.T
+
+    Rx = Aguess[0] + dR[0]
+    Ry = Aguess[1] + dR[1]
+    Rz = Aguess[2] + dR[2]
+    Rt = dR[3]
+
+    #print("A:",A)
+    print("Rx",Rx)
+    print("Ry",Ry)
+    print("Rz",Rz)
+    print("Rt",Rt)
+
+    print(dR)
 
 if __name__ == "__main__":
     
