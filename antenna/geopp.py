@@ -287,6 +287,21 @@ if __name__ == "__main__":
         fig3.tight_layout()
         plt.savefig(outfile+'_LC.eps')
 
+        if option.printFile:
+            ctr = 0
+            f1=open('./fileL1.txt', 'w')
+            f2=open('./fileL2.txt', 'w')
+            fC=open('./fileLC.txt', 'w')
+
+            for e in range(0,91,5):
+                f1.write("{} {}\n".format(e, antenna1['L1PCV'][ctr]) )
+                f2.write("{} {}\n".format(e, antenna1['L2PCV'][ctr]) )
+                fC.write("{} {}\n".format(e, (2545.7*antenna1['L1PCV'][ctr] - 1545.7*antenna1['L2PCV'][ctr])/1000.))
+                ctr = ctr + 1
+
+            f1.close()
+            f2.close()
+            fC.close()
     elif option.drp:
         antenna1 = parseGEOPP(option.drp)
         outfile = option.drp
@@ -385,8 +400,11 @@ if __name__ == "__main__":
         fig1 = plt.figure(figsize=(3.62, 2.76))
         ax = fig1.add_subplot(111)
 
-        ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=[data['L1'][:,1]*1000., data['L1'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
+        # 0 => el , 1 -> minumum, 2 -> maximum , 3 -> mean, 4 -> AbsMean, 5 -> Std.Dev, 6-> Acc Std. dev 
+        #ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=[data['L1'][:,1]*1000., data['L1'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
+        #ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=[data['L1'][:,2]*1000., data['L1'][:,1]*-1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
         ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=data['L1'][:,5]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        #ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=data['L1'][:,6]*1000., fmt='-o', color='k',ecolor='k',capsize=5)
 
         # plot the tolerances acceptable by the ATWG
         ax.plot([-5,90],[toll,toll],'r--')
@@ -405,7 +423,7 @@ if __name__ == "__main__":
         fig2 = plt.figure(figsize=(3.62, 2.76))
         ax2 = fig2.add_subplot(111)
 
-        ax2.errorbar( data['L2'][:,0], data['L2'][:,3]*1000, yerr=[data['L2'][:,1]*1000., data['L2'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
+        #ax2.errorbar( data['L2'][:,0], data['L2'][:,3]*1000, yerr=[data['L2'][:,1]*1000., data['L2'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
         ax2.errorbar( data['L2'][:,0], data['L2'][:,3]*1000, yerr=data['L2'][:,5]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
 
         ax2.plot([-5,90],[toll,toll],'r--')
@@ -423,7 +441,7 @@ if __name__ == "__main__":
         fig3 = plt.figure(figsize=(3.62, 2.76))
         ax3 = fig3.add_subplot(111)
 
-        ax3.errorbar( data['L0'][:,0], data['L0'][:,3]*1000, yerr=[data['L0'][:,1]*1000., data['L0'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
+        #ax3.errorbar( data['L0'][:,0], data['L0'][:,3]*1000, yerr=[data['L0'][:,1]*1000., data['L0'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
         ax3.errorbar( data['L0'][:,0], data['L0'][:,3]*1000, yerr=data['L0'][:,5]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
         
         ax3.plot([-5,90],[toll,toll],'r--')
@@ -443,6 +461,7 @@ if __name__ == "__main__":
         # Plot the absolute mean and accumulated standard Deviation
         fig4 = plt.figure(figsize=(3.62, 2.76))
         ax4 = fig4.add_subplot(111)
+        # 0 => el , 1 -> minumum, 2 -> maximum , 3 -> mean, 4 -> AbsMean, 5 -> Std.Dev, 6-> Acc Std. dev 
         ax4.errorbar( data['L1'][:,0], data['L1'][:,4]*1000, yerr=data['L1'][:,6]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
         ax4.plot([-5,90],[toll,toll],'r--')
         ax4.set_xlim([-5,90])
