@@ -91,6 +91,7 @@ elif option.up :
         else:
             ax.plot(data[ind,1], data[ind,5]*1000.,linewidth=2)
             ax.plot(data2[ind2,1], data2[ind2,5]*1000.,linewidth=2)
+            ax.legend([option.legend1,option.legend2],fontsize=8)
     else:
         ax.plot(data[ind,1], data[ind,5]*1000.,linewidth=2)
 
@@ -107,6 +108,26 @@ elif option.filename3 :
     ax.plot(data3[ind3,1], data3[ind3,2],'k',linewidth=2)
 
     ax.legend([option.legend1,option.legend2,option.legend3],fontsize=8)
+elif option.north :
+    ax.plot(data[ind,1], data[ind,3]*1000.,linewidth=2)
+    ax.set_ylabel('North Bias (mm)')
+elif option.east :
+    ax.plot(data[ind,1], data[ind,4]*1000.,linewidth=2)
+    ax.set_ylabel('East Bias (mm)')
+elif option.trop > 0:
+    if option.filename2:
+        data2 = np.genfromtxt(option.filename2)
+        ind2 = np.argsort(data2[:,1])
+        if option.diff:
+            for idx in range(6,option.trop+5):
+                ax.plot(data[ind,1], ( np.abs(data[ind,idx]) - np.abs(data2[ind2,idx]) )*1000.,'b.',alpha=0.7)
+        #else:
+        #    ax.plot(data[ind,1], data[ind,5]*1000.,linewidth=2)
+        #    ax.plot(data2[ind2,1], data2[ind2,5]*1000.,linewidth=2)
+    else:
+        for idx in range(6,option.trop+5):
+            ax.plot(data[ind,1], data[ind,idx]*1000,'b.',alpha=0.7)
+    ax.set_ylabel('Troposphere Bias (mm)')
 elif option.filename2 :
     data2 = np.genfromtxt(option.filename2)
     ind = np.argsort(data[:,1])
@@ -116,17 +137,6 @@ elif option.filename2 :
     else:
         ax.plot(data[ind,1], data[ind,2], data2[ind2,1], data2[ind2,2],linewidth=2)
         ax.legend([option.legend1,option.legend2],fontsize=8)
-elif option.north :
-    ax.plot(data[ind,1], data[ind,3]*1000.,linewidth=2)
-    ax.set_ylabel('North Bias (mm)')
-elif option.east :
-    ax.plot(data[ind,1], data[ind,4]*1000.,linewidth=2)
-    ax.set_ylabel('East Bias (mm)')
-elif option.trop > 0:
-    #idx = 4 + option.trop
-    for idx in range(6,option.trop+5):
-        ax.plot(data[ind,1], data[ind,idx]*100,'b.',alpha=0.7)
-    ax.set_ylabel('Troposphere Bias')
 else:
     ax.plot(data[ind,1], data[ind,2],linewidth=2)
 
