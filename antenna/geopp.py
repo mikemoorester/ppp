@@ -367,6 +367,40 @@ if __name__ == "__main__":
         plt.tight_layout()
         plt.savefig(outfile+'_polar_L2.eps')
 
+        # LC polar plot
+        fig = plt.figure(figsize=(3.62, 2.76))
+        ax = fig.add_subplot(111,polar=True)
+        ax.set_theta_direction(-1)
+        ax.set_theta_offset(np.radians(90.))
+        ax.set_ylim([0,1])
+        ax.set_rgrids((0.00001, np.radians(20)/np.pi*2, np.radians(40)/np.pi*2,np.radians(60)/np.pi*2,np.radians(80)/np.pi*2),labels=('0', '20', '40', '60', '80'),angle=180)
+
+        #cmap = cm.get_cmap('YlOrRd', 9)
+
+        iCtr = 0
+        for a in az:
+            jCtr = 0
+            for z in zz:
+                l1 = antenna1['L1PCV'][iCtr,jCtr] * 2545.7
+                l2 = antenna1['L2PCV'][iCtr,jCtr] * 1545.7
+                lc = l1 - l2
+                print("L1 L2 LC:",l1, l2, lc)
+                polar = ax.scatter(np.radians(a), np.radians(90.-z)/np.pi*2., c=np.abs(lc), 
+                                    s=50, alpha=1., cmap=cmap, vmin=0, vmax=3, lw=0)
+                jCtr += 1
+            iCtr += 1
+
+        cbar = fig.colorbar(polar,shrink=0.75,pad=.10)
+        cbar.ax.tick_params(labelsize=8)
+        cbar.set_label('PCV (mm)',size=8)
+
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+            ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+
+        plt.tight_layout()
+        plt.savefig(outfile+'_polar_LC.eps')
+
     elif option.printFile:
         antenna1 = parseGEOPP(option.file1)
         if antenna1['dazi'] < 0.001 :
@@ -401,10 +435,9 @@ if __name__ == "__main__":
         ax = fig1.add_subplot(111)
 
         # 0 => el , 1 -> minumum, 2 -> maximum , 3 -> mean, 4 -> AbsMean, 5 -> Std.Dev, 6-> Acc Std. dev 
-        #ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=[data['L1'][:,1]*1000., data['L1'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
-        #ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=[data['L1'][:,2]*1000., data['L1'][:,1]*-1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
-        ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=data['L1'][:,5]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
-        #ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=data['L1'][:,6]*1000., fmt='-o', color='k',ecolor='k',capsize=5)
+        ax.errorbar( data['L1'][:,0], data['L1'][:,3]*1000, yerr=data['L1'][:,5]/2*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        ax.plot( data['L1'][:,0], data['L1'][:,1]*1000,color='k',alpha=0.5 )
+        ax.plot( data['L1'][:,0], data['L1'][:,2]*1000,color='k',alpha=0.5 )
 
         # plot the tolerances acceptable by the ATWG
         ax.plot([-5,90],[toll,toll],'r--')
@@ -423,8 +456,9 @@ if __name__ == "__main__":
         fig2 = plt.figure(figsize=(3.62, 2.76))
         ax2 = fig2.add_subplot(111)
 
-        #ax2.errorbar( data['L2'][:,0], data['L2'][:,3]*1000, yerr=[data['L2'][:,1]*1000., data['L2'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
-        ax2.errorbar( data['L2'][:,0], data['L2'][:,3]*1000, yerr=data['L2'][:,5]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        ax2.errorbar( data['L2'][:,0], data['L2'][:,3]*1000, yerr=data['L2'][:,5]/2*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        ax2.plot( data['L2'][:,0], data['L2'][:,1]*1000,color='k',alpha=0.5 )
+        ax2.plot( data['L2'][:,0], data['L2'][:,2]*1000,color='k',alpha=0.5 )
 
         ax2.plot([-5,90],[toll,toll],'r--')
         ax2.plot([-5,90],[-toll,-toll],'r--')
@@ -441,8 +475,9 @@ if __name__ == "__main__":
         fig3 = plt.figure(figsize=(3.62, 2.76))
         ax3 = fig3.add_subplot(111)
 
-        #ax3.errorbar( data['L0'][:,0], data['L0'][:,3]*1000, yerr=[data['L0'][:,1]*1000., data['L0'][:,1]*1000.], fmt='-o', linestyle='None', color='k', ecolor='k', capsize=5)
-        ax3.errorbar( data['L0'][:,0], data['L0'][:,3]*1000, yerr=data['L0'][:,5]*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        ax3.errorbar( data['L0'][:,0], data['L0'][:,3]*1000, yerr=data['L0'][:,5]/2*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        ax3.plot( data['L0'][:,0], data['L0'][:,1]*1000,color='k',alpha=0.5 )
+        ax3.plot( data['L0'][:,0], data['L0'][:,2]*1000,color='k',alpha=0.5 )
         
         ax3.plot([-5,90],[toll,toll],'r--')
         ax3.plot([-5,90],[-toll,-toll],'r--')
