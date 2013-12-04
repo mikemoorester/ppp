@@ -474,23 +474,109 @@ if __name__ == "__main__":
         ax = fig1.add_subplot(111)
 
         vec = antenna1['L1PCV'].ravel() * 1000
-        #bins = np.linspace(-3,3,7)
-        #n, bins, rectangles = ax.hist(vec, 11, normed=True, histtype='bar')
         weights = np.ones_like(vec)/len(vec)
         n, bins, rectangles = ax.hist(vec, bins=11, histtype='bar',weights=weights)
-        # no better to do this from the raw data, than below...
-        # can then do a search over bins for values above and below 1
-        # sum up the corresponding indiceis for n, and then this will give the percentage outside the limits
-        #n, bins, rectangles = ax.hist(vec, bins, normed=True, histtype='bar')
+
+        # Work out how many are above the guidelines for comparisons...
+        criterion = ((vec[:] > 1 ) | (vec[:] < -1))        
+        ind = np.array(np.where(criterion))
+        nonConform = ind.size/vec.size
+        titleStr = "Percentage of obs above 1 mm:{:.1f} %".format(nonConform*100)
+        ax.set_title(titleStr)
+
         ax.plot([-1,-1],[0,1],'r--')
         ax.plot([1,1],[0,1],'r--')
+
+        ax.set_xlabel('Difference (mm)')
+        ax.set_ylabel('Percentage of Observations')
+        ax.set_ylim([0, np.max(n)*1.5])
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+            ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+
+        plt.tight_layout()
+        plt.savefig(outfile+'_histogram_L1.eps')
+
+        #=======================================
+        fig1 = plt.figure(figsize=(3.62, 2.76))
+        ax = fig1.add_subplot(111)
+
+        vec = antenna1['L2PCV'].ravel() * 1000
+        weights = np.ones_like(vec)/len(vec)
+        n, bins, rectangles = ax.hist(vec, bins=11, histtype='bar',weights=weights)
+
+        # Work out how many are above the guidelines for comparisons...
+        criterion = ((vec[:] > 1 ) | (vec[:] < -1))        
+        ind = np.array(np.where(criterion))
+        nonConform = ind.size/vec.size
+        titleStr = "Percentage of obs above 1 mm:{:.1f} %".format(nonConform*100)
+        ax.set_title(titleStr)
+
+        ax.plot([-1,-1],[0,1],'r--')
+        ax.plot([1,1],[0,1],'r--')
+
+        ax.set_xlabel('Difference (mm)')
+        ax.set_ylabel('Percentage of Observations')
+        ax.set_ylim([0, np.max(n)*1.5])
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+            ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+
+        plt.tight_layout()
+        plt.savefig(outfile+'_histogram_L2.eps')
+
+        #=======================================
+        # Work out the percentage of misfit per elevation angle
+        #=======================================
+        fig1 = plt.figure(figsize=(3.62, 2.76))
+        ax = fig1.add_subplot(111)
+        
+        # Work out how many are above the guidelines for comparisons...
+        jCtr = 0
+        for z in zz:
+            criterion = ((antenna1['L1PCV'][:,jCtr] > 0.001) | (antenna1['L1PCV'][:,jCtr] < -0.001 ))
+            ind = np.array(np.where(criterion))
+            percent = (ind.size / az.size) * 100.
+            p1 = plt.bar(z, percent, 3.5, color='r')
+            p2 = plt.bar(z, 100-percent, 3.5, color='b', bottom=percent) 
+            jCtr = jCtr + 1
+
+        ax.legend( (p1[0],p2[0]),('Above 1mm','Below 1mm'),prop={'size':8})
+        ax.set_xlabel('Elevation Angle (degrees)')
+        ax.set_ylabel('Percentage of Observations')
+        ax.set_xlim([0,90])
 
         for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
             ax.get_xticklabels() + ax.get_yticklabels()):
             item.set_fontsize(8)
 
         plt.tight_layout()
-        #plt.savefig(outfile+'_summary_L2.eps')
+        plt.savefig(outfile+'_histogram_ele_L1.eps')
+
+        fig1 = plt.figure(figsize=(3.62, 2.76))
+        ax = fig1.add_subplot(111)
+        
+        # Work out how many are above the guidelines for comparisons...
+        jCtr = 0
+        for z in zz:
+            criterion = ((antenna1['L2PCV'][:,jCtr] > 0.001) | (antenna1['L2PCV'][:,jCtr] < -0.001 ))
+            ind = np.array(np.where(criterion))
+            percent = (ind.size / az.size) * 100.
+            p1 = plt.bar(z, percent, 3.5, color='r')
+            p2 = plt.bar(z, 100-percent, 3.5, color='b', bottom=percent) 
+            jCtr = jCtr + 1
+
+        ax.legend( (p1[0],p2[0]),('Above 1mm','Below 1mm'),prop={'size':8})
+        ax.set_xlabel('Elevation Angle (degrees)')
+        ax.set_ylabel('Percentage of Observations')
+        ax.set_xlim([0,90])
+
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+            ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+
+        plt.tight_layout()
+        plt.savefig(outfile+'_histogram_ele_L2.eps')
 
         #======================================================================
         # need an option to interpolate this onto a 0.1 grid, to be block median'd later in a ppp simulation
