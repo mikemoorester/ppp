@@ -56,13 +56,33 @@ def parseNavData(nav,line):
         epoch = nav['epochs'][-1]
         l = len(line)
         if l > 21:
-            epoch['data'].append(expDtofloat(line[3:22]))
+            # check that it has the right format, ie D or E for exponential
+            # if this is not present assume this field is corrupt and set it to NaN
+	    # set the epoch time to 1980, so that this frame or epoch of data
+            # will not be selected
+            if re..search(r'([DdEe])',line[3:22]) :
+                epoch['data'].append(expDtofloat(line[3:22]) )
+            else:
+                epoch['data'].append(float('NaN'))
+    		epoch['time'] = dt.datetime(1980,01,01,00,00,00,00)
         if l > 40:
-            epoch['data'].append(expDtofloat(line[22:41]))
+            if re.search('[DdEe]',line[22:41]):
+                epoch['data'].append(expDtofloat(line[22:41]))
+            else:
+                epoch['data'].append(float('NaN'))
+    		epoch['time'] = dt.datetime(1980,01,01,00,00,00,00)
         if l > 59:
-            epoch['data'].append(expDtofloat(line[41:60]))
+            if re.search('[DdEe]',line[41:60]):
+                epoch['data'].append(expDtofloat(line[41:60]))
+            else:
+                epoch['data'].append(float('NaN'))
+    		epoch['time'] = dt.datetime(1980,01,01,00,00,00,00)
         if l > 78:
-            epoch['data'].append(expDtofloat(line[60:79]))
+            if re.search('[DdEe]',line[60:79]):
+                epoch['data'].append(expDtofloat(line[60:79]))
+            else:
+                epoch['data'].append(float('NaN'))
+    		epoch['time'] = dt.datetime(1980,01,01,00,00,00,00)
         
     return 1
 
