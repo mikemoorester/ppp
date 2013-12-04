@@ -340,6 +340,9 @@ if __name__ == "__main__":
         plt.tight_layout()
         plt.savefig(outfile+'_polar_L1.eps')
 
+        #======================================================================
+        # L2 plots
+        #======================================================================
         fig = plt.figure(figsize=(3.62, 2.76))
         ax = fig.add_subplot(111,polar=True)
         ax.set_theta_direction(-1)
@@ -367,15 +370,15 @@ if __name__ == "__main__":
         plt.tight_layout()
         plt.savefig(outfile+'_polar_L2.eps')
 
+        #======================================================================
         # LC polar plot
+        #======================================================================
         fig = plt.figure(figsize=(3.62, 2.76))
         ax = fig.add_subplot(111,polar=True)
         ax.set_theta_direction(-1)
         ax.set_theta_offset(np.radians(90.))
         ax.set_ylim([0,1])
         ax.set_rgrids((0.00001, np.radians(20)/np.pi*2, np.radians(40)/np.pi*2,np.radians(60)/np.pi*2,np.radians(80)/np.pi*2),labels=('0', '20', '40', '60', '80'),angle=180)
-
-        #cmap = cm.get_cmap('YlOrRd', 9)
 
         iCtr = 0
         for a in az:
@@ -384,7 +387,7 @@ if __name__ == "__main__":
                 l1 = antenna1['L1PCV'][iCtr,jCtr] * 2545.7
                 l2 = antenna1['L2PCV'][iCtr,jCtr] * 1545.7
                 lc = l1 - l2
-                print("L1 L2 LC:",l1, l2, lc)
+                #print("L1 L2 LC:",l1, l2, lc)
                 polar = ax.scatter(np.radians(a), np.radians(90.-z)/np.pi*2., c=np.abs(lc), 
                                     s=50, alpha=1., cmap=cmap, vmin=0, vmax=3, lw=0)
                 jCtr += 1
@@ -400,6 +403,113 @@ if __name__ == "__main__":
 
         plt.tight_layout()
         plt.savefig(outfile+'_polar_LC.eps')
+
+        #======================================================================
+        # Summary plots
+        #======================================================================
+
+        # Plot the mean, minimum and maximum values vs elevation
+        # Plot the L1 frequency
+        fig1 = plt.figure(figsize=(3.62, 2.76))
+        ax = fig1.add_subplot(111)
+
+        # set the tollerance to be 1mm
+        toll = 1
+
+        # get the mean for each elevation bin
+        antenna1['L1_Ele_Mean'] = np.mean(antenna1['L1PCV'],axis=0)
+        antenna1['L1_Ele_Std']  = np.std(antenna1['L1PCV'],axis=0)
+        antenna1['L1_Ele_Min']  = np.min(antenna1['L1PCV'],axis=0)
+        antenna1['L1_Ele_Max']  = np.max(antenna1['L1PCV'],axis=0)
+
+        antenna1['L2_Ele_Mean'] = np.mean(antenna1['L2PCV'],axis=0)
+        antenna1['L2_Ele_Std']  = np.std(antenna1['L2PCV'],axis=0)
+        antenna1['L2_Ele_Min']  = np.min(antenna1['L2PCV'],axis=0)
+        antenna1['L2_Ele_Max']  = np.max(antenna1['L2PCV'],axis=0)
+
+        ele = range(0,91,5)
+        ax.errorbar(ele , antenna1['L1_Ele_Mean']*1000, yerr=antenna1['L1_Ele_Std']*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        ax.plot( ele, antenna1['L1_Ele_Min']*1000,color='k',alpha=0.5 )
+        ax.plot( ele, antenna1['L1_Ele_Max']*1000,color='k',alpha=0.5 )
+
+        # plot the tolerances acceptable by the ATWG
+        ax.plot([-5,90],[toll,toll],'r--')
+        ax.plot([-5,90],[-toll,-toll],'r--')
+        ax.set_xlim([-5,90])
+        ax.set_xlabel('Elevation Angle (degrees)')
+        ax.set_ylabel('Difference in Absolute PCV L1 (mm)')
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+            ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+
+        plt.tight_layout()
+        plt.savefig(outfile+'_summary_L1.eps')
+
+        #=======================================
+        # Plot the L2 frequency
+        fig1 = plt.figure(figsize=(3.62, 2.76))
+        ax = fig1.add_subplot(111)
+
+        ax.errorbar(ele , antenna1['L2_Ele_Mean']*1000, yerr=antenna1['L2_Ele_Std']*1000., fmt='-o', color='k',ecolor='k',capsize=3)
+        ax.plot( ele, antenna1['L2_Ele_Min']*1000,color='k',alpha=0.5 )
+        ax.plot( ele, antenna1['L2_Ele_Max']*1000,color='k',alpha=0.5 )
+
+        # plot the tolerances acceptable by the ATWG
+        ax.plot([-5,90],[toll,toll],'r--')
+        ax.plot([-5,90],[-toll,-toll],'r--')
+        ax.set_xlim([-5,90])
+        ax.set_xlabel('Elevation Angle (degrees)')
+        ax.set_ylabel('Difference in Absolute PCV L2 (mm)')
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+            ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+
+        plt.tight_layout()
+        plt.savefig(outfile+'_summary_L2.eps')
+
+        #========================================
+        # Plot a histogram of the differences
+        #========================================
+        fig1 = plt.figure(figsize=(3.62, 2.76))
+        ax = fig1.add_subplot(111)
+
+        vec = antenna1['L1PCV'].ravel() * 1000
+        #bins = np.linspace(-3,3,7)
+        #n, bins, rectangles = ax.hist(vec, 11, normed=True, histtype='bar')
+        weights = np.ones_like(vec)/len(vec)
+        n, bins, rectangles = ax.hist(vec, bins=11, histtype='bar',weights=weights)
+        # no better to do this from the raw data, than below...
+        # can then do a search over bins for values above and below 1
+        # sum up the corresponding indiceis for n, and then this will give the percentage outside the limits
+        #n, bins, rectangles = ax.hist(vec, bins, normed=True, histtype='bar')
+        ax.plot([-1,-1],[0,1],'r--')
+        ax.plot([1,1],[0,1],'r--')
+
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+            ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(8)
+
+        plt.tight_layout()
+        #plt.savefig(outfile+'_summary_L2.eps')
+
+        #======================================================================
+        # need an option to interpolate this onto a 0.1 grid, to be block median'd later in a ppp simulation
+        #======================================================================
+        if option.printFile:
+            ctr = 0
+            f1=open('./fileL1.txt', 'w')
+            f2=open('./fileL2.txt', 'w')
+            fC=open('./fileLC.txt', 'w')
+            for a in range(0,361,5):
+                for e in range(0,91,5):
+                    f1.write("{:.2f} {:.2f} {}\n".format(a, e, antenna1['L1PCV'][ctr]) )
+                    f2.write("{:.2f} {:.2f} {}\n".format(a, e, antenna1['L2PCV'][ctr]) )
+                    fC.write("{:.2f} {:.2f} {}\n".format(a, e, (2545.7*antenna1['L1PCV'][ctr] - 1545.7*antenna1['L2PCV'][ctr])/1000.))
+                    ctr = ctr + 1
+
+            f1.close()
+            f2.close()
+            fC.close()
 
     elif option.printFile:
         antenna1 = parseGEOPP(option.file1)
