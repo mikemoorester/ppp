@@ -770,7 +770,10 @@ while startymdhms < stopymdhms :
     if option.residuals:
         b = b.T
     else :
-        b = b.T + np.random.normal(0,(option.randomNoise/1000.),b.shape[0])
+        if option.randomNoise < 0.0001:
+            b = b.T
+        else:
+            b = b.T + np.random.normal(0,(option.randomNoise/1000.),b.shape[0])
     #print("b shape",b.shape)
     #%% Matrix setup now complete
 

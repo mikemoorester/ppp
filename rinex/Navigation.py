@@ -60,7 +60,7 @@ def parseNavData(nav,line):
             # if this is not present assume this field is corrupt and set it to NaN
 	    # set the epoch time to 1980, so that this frame or epoch of data
             # will not be selected
-            if re..search(r'([DdEe])',line[3:22]) :
+            if re.search(r'([DdEe])',line[3:22]) :
                 epoch['data'].append(expDtofloat(line[3:22]) )
             else:
                 epoch['data'].append(float('NaN'))
