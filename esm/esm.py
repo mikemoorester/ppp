@@ -23,7 +23,9 @@ if __name__ == "__main__":
     #parser.add_argument('-p', '--plot',dest='plot', default=False, action='store_true')
     parser.add_argument('--polar',dest='polar', default=False, action='store_true')
     parser.add_argument('--elevation',dest='elevation', default=False, action='store_true')
-
+    
+    # Option to create a summary file of all the DPH residuals 
+    parser.add_argument('--dph',dest='dphFile', description='Add a DPH file to a Summary file for a station')
     args = parser.parse_args()
 
     # get the antenna information from an antex file

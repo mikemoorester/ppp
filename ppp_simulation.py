@@ -183,8 +183,11 @@ if option.esmFile:
     NaNs = np.isnan(ESM)
     ESM[NaNs] = 0.
     # convert from mm to m
+    # Need to turn this off for the antenna error, already in m
     ESM = ESM/1000.
     # order the matrix by elevation, rather than zenith angle 
+    # need to turn this off, as this is already ordered by elevation
+    # for the antenna error simulation...
     ESM = ESM[:,::-1]
     esmFlag = 1
     x = np.linspace(0,90, int(90./GRID)+1 )
@@ -418,8 +421,11 @@ while startymdhms < stopymdhms :
         radome = np.genfromtxt(option.radomeFile)
         r = interpolate.interp1d(radome[:,0], radome[:,1], kind='linear')
     elif option.radomeFileAZ:
-	radome = np.genfromtxt(option.radomeFileAZ)
-    	r = interpolate.interp2d(radome[:,0], radome[:,1], radome[:,2], kind='linear')
+        x = np.linspace(0,360, int(360./5.)+1 )
+        y = np.linspace(0,90, int(90./5.)+1 )
+        radome = np.genfromtxt(option.radomeFileAZ)
+    	r = interpolate.interp2d(x, y, radome[:,2], kind='linear')
+    	#r = interpolate.interp2d(radome[:,0], radome[:,1], radome[:,2], kind='linear')
 
     # intialise observation counter
     obs_count = 1
@@ -689,8 +695,8 @@ while startymdhms < stopymdhms :
 
             if option.radomeFile:
                 bias_mp = bias_mp + r(satD[skey]['El1'])
-	    elif option.radomeFileAZ:
-                bias_mp = bias_mp + r(satD[skey]['El1'],satD[skey]['Az1'])[0]
+            elif option.radomeFileAZ:
+                bias_mp = bias_mp + r(satD[skey]['Az1'],satD[skey]['El1'])[0]
 
             b[obs_count-1,0] = ( np.sqrt( bias_en**2 + epochu_bias**2 - 
                                 2. * bias_en * epochu_bias * np.cos(np.radians(90.+satD[skey]['El1'])) ) +

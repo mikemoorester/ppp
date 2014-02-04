@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 import re
+import gzip
 
 def blockMedian(residualFile, gridSpacing, bType):
     """
@@ -104,31 +105,59 @@ def blockMedian(residualFile, gridSpacing, bType):
 
     return False 
 
+def file_opener(filename):
+    '''
+    Decide what kind of file opener should be used to parse the data:
+    # file signatures from: http://www.garykessler.net/library/file_sigs.html
+    '''
+
+    # A Dictionary of some file signatures,
+    # Note the opener statements are not correct for bzip2 and zip
+    openers = {
+        "\x1f\x8b\x08": gzip.open,
+        "\x42\x5a\x68": open,      # bz2 file signature
+        "\x50\x4b\x03\x04": open   # zip file signature
+    }
+
+    max_len = max(len(x) for x in openers)
+    with open(filename) as f:
+        file_start = f.read(max_len)
+        for signature, filetype in openers.items():
+            if file_start.startswith(signature):
+                return filetype
+    return open
+
 def parseDPH(dphFile) :
     """
     dph = parseDPH(dphFile)
+
     Read in a GAMIT undifferenced phase residual file.
-    Return a DPH structurea
+    Return a DPH structure
 
     Will skip any lines in the file which contain a '*' 
-    at any column number
+    within any column 
 
     Checks there are no comments in the first column of the file
+    Checks if the file is gzip'd or uncompressed
 
     """
 
     asterixRGX = re.compile('\*')
 
     dph = {}
-
     obs = {}
+
     #obs['dphs'] = []
     obs['satsViewed'] = set()
     obs['epochs'] = set()
 
     debug = 0
 
-    with open(dphFile) as f:
+    # work out if the file is compressed or not,
+    # and then get the correct file opener.
+    file_open = file_opener(dphFile)
+
+    with file_open(dphFile) as f:
         for line in f:
             dph = {}
             if line[0] != ' ':
@@ -159,30 +188,43 @@ def parseDPH(dphFile) :
                 if str(line[149:169]).strip() != '' :
                     dph['L2cycles'] = float(line[149:169])
 
-                dph['prn']   = int(line[170:172])
+                #dph['prn']   = int(line[170:172])
+                dph['prn']   = int(line[171:173])
                 prnSTR = 'prn_'+str(dph['prn'])
+                epoch = str(dph['epoch'])
 
                 # store the data in lists accessed by the sat prn key
                 if dph['prn'] in obs['satsViewed'] :
                     obs[prnSTR].append(dph)
+                    #obs[prnSTR][epoch] = dph
                 else:
                     obs[prnSTR] = []
                     obs[prnSTR].append(dph)
+                    #obs[prnSTR][epoch] = dph
+
+                # keep a record of which indice each epoch is located at
+                ind = len(obs[prnSTR]) - 1
 
                 # Keep a record of each satellite viewed at each epoch in a set
                 epochStr = str(dph['epoch'])
                 if dph['epoch'] in obs['epochs']:
-                    obs[epochStr].add(dph['prn'])
+                    #obs[epochStr].add((dph['prn'],ind))
+                    #obs[epochStr].append({str(dph['prn']):ind})    
+                    obs[epochStr][str(dph['prn'])]=ind    
                 else :
                     obs['epochs'].add(dph['epoch'])
-                    obs[epochStr] = set()
-                    obs[epochStr].add(dph['prn'])    
+                    #obs[epochStr] = set()
+                    #obs[epochStr].add(dph['prn'])    
+                    obs[epochStr] = {} 
+                    obs[epochStr][str(dph['prn'])]=ind    
+                    #obs[epochStr].append({str(dph['prn']):ind})    
 
                 #obs['dphs'].append(dph)
 
                 # keep a record of all the unique satellies which have residuals
                 obs['satsViewed'].add(dph['prn'])
-                   
+        
+
     return obs 
 
 
@@ -194,6 +236,7 @@ if __name__ == "__main__":
     from matplotlib import cm 
 
     #===================================
+    # TODO Change this to argparse..
     from optparse import OptionParser
 
     parser = OptionParser()
@@ -209,7 +252,7 @@ if __name__ == "__main__":
     (option, args) = parser.parse_args()
 
     #===================================
-    
+   
     if option.dphFilename :
         dphs = parseDPH(option.dphFilename)
     
@@ -234,7 +277,8 @@ if __name__ == "__main__":
     # Calculate the block median
     zz = np.linspace(0,90,181)
 
-    if option.elevationMedianPlot :
+    #if option.elevationMedianPlot :
+    if option.elevationPlot :
         med,medStd,medrms = blockMedian(option.filename,0.5,0)
         # flip the array around so that is in order of elevation angle
         ele = 90. - zz[::-1]
@@ -243,7 +287,8 @@ if __name__ == "__main__":
         # Do an elevation only plot
         fig = plt.figure(figsize=(3.62, 2.76))
         ax = fig.add_subplot(111)
-        ax.plot(ele,np.median(med))
+        ax.plot(ele,med)
+        #ax.plot(ele,np.median(med))
         ax.set_xlabel('Elevation Angle (degrees)',fontsize=8)
         ax.set_ylabel('Bias (mm)',fontsize=8)
         ax.set_ylim([-7.5, 7.5])

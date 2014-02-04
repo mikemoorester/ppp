@@ -316,7 +316,7 @@ if __name__ == "__main__":
                         help="Produce a plot of simulated multipath using the multipath_herring()")
 
     parser.add_option("-N","--normalise", dest="normalise",action="store_true",default=False,
-                        help="Produce a plot of simulated multipath nromalised with 1/sin(e) ")
+                        help="Produce a plot of simulated multipath normalised with 1/sin(e) ")
 
     (option,args) = parser.parse_args()
 
@@ -378,7 +378,8 @@ if __name__ == "__main__":
 
     if option.moore :
 
-        dsigmaLc_010 = multipath_moore(0.3, 0.17, 'LEIAT504        NONE', 2,0.5,1)
+        #dsigmaLc_010 = multipath_moore(0.3, 0.17, 'LEIAT504        NONE', 2,0.5,1)
+        dsigmaLc_010 = multipath_moore(0.3, 0.10, 'LEIAT504        NONE', 2,0.5,1)
         #dsigmaLc_015 = multipath_moore(0.3, 0.15, 'LEIAT504        NONE', 2,0.5,1)
         #dsigmaLc_050 = multipath_moore(0.3, 0.50, 'LEIAT504        NONE', 2,0.5,1)
         dsigmaLc_150 = multipath_moore(0.3, 1.50, 'LEIAT504        NONE', 2,0.5,1)
@@ -389,10 +390,12 @@ if __name__ == "__main__":
 
         #ax.plot( xi, dsigmaLc_010[0,:], xi, dsigmaLc_015[0,:], xi, dsigmaLc_050[0,:], xi, dsigmaLc_150[0,:],linewidth=2 )
         ax.plot( xi, dsigmaLc_010[0,:]*1000., xi, dsigmaLc_150[0,:]*1000.,linewidth=2 )
-        ax.set_ylim([-25, 25])
+        #ax.set_ylim([-25, 25])
+        ax.set_ylim([-20, 20])
+        ax.set_xlim([10, 90])
         ax.set_xlabel('Elevation Angle (degrees)')
         ax.set_ylabel('Multipath Bias (mm)')
-        ax.legend(['h = 0.17 m','h = 1.50 m'],fontsize=8)
+        ax.legend(['h = 0.10 m','h = 1.50 m'],fontsize=8)
 
         for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
                              ax.get_xticklabels() + ax.get_yticklabels()):

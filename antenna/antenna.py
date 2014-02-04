@@ -138,7 +138,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--plot',dest='plot', default=False, action='store_true')
     parser.add_argument('--polar',dest='polar', default=False, action='store_true')
     parser.add_argument('--elevation',dest='elevation', default=False, action='store_true')
-    parser.add_argument('--EM',dest='elevationMedian', default=False, action='store_true', help='Plot the Median s Elevation')
+    parser.add_argument('--EM',dest='elevationMedian', default=False, action='store_true', help='Plot the Median PCV vs Elevation')
 
     args = parser.parse_args()
 
@@ -184,6 +184,7 @@ if __name__ == "__main__":
         if args.elevation :
             
             zz = np.linspace(0,90,19)
+            #zz = np.linspace(0,90,181)
             ele = 90. - zz[::-1]
 
             # Do an elevation only plot
@@ -209,7 +210,8 @@ if __name__ == "__main__":
             # Do an elevation only plot
             fig = plt.figure(figsize=(3.62, 2.76))
             ax = fig.add_subplot(111)
-            med = np.median(aData,axis=0)
+            #med = np.median(aData,axis=0)
+            med = np.mean(aData,axis=0)
             ax.plot(ele,med[::-1])
             #for zen in aData :
             #   ax.plot(ele,zen[::-1])

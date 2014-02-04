@@ -15,10 +15,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(prog='consolidateResiduals', description='PARSE DPH files into one summary file for each station')
 
-    #parser.add_argument('-f', '--file', dest='file1', default='./t/antmod.dat')
     #parser.add_argument('-g', '--grid', dest='grid', default=5., type=float)
-    #parser.add_argument('-r', '--resfile', dest='resfile', default='./t/MOBS_DPH_2012_001_143.all')
-    #parser.add_argument('-t', '--AntType',dest='AntType', default='ASH701945C_M    NONE')
 
     #parser.add_argument('--polar',dest='polar', default=False, action='store_true')
     #parser.add_argument('--elevation',dest='elevation', default=False, action='store_true')
@@ -26,27 +23,27 @@ if __name__ == "__main__":
     # Option to create a summary file of all the DPH residuals 
     parser.add_argument('--dph',dest='dphFile')#, description='Add a DPH file to a Summary file for a station')
 
-    parser.add_argument('--year',dest='year')#, description='Year the Phase residuals were observed - will be added to the epoch column to get a correct time stamp')
-    parser.add_argument('--doy',dest='doy')#,description='Day-of-year phase residuals were observed - will be added to the epoch column to obtain a correct time stamp')
+    parser.add_argument('--year',dest='year')
+    #, description='Year the Phase residuals were observed - will be added to the epoch column to get a correct time stamp')
+    parser.add_argument('--doy',dest='doy')
+    #,description='Day-of-year phase residuals were observed - will be added to the epoch column to obtain a correct time stamp')
+    
     args = parser.parse_args()
 
     # get the antenna information from an antex file
     dphs = res.parseDPH(args.dphFile)
-    print('Sats Viewed:',dphs['satsViewed'])
-    print('Epochs Recorded:',dphs['epochs'])
 
     # Iterate over each epoch
     for epoch in dphs['epochs']:
-        print('Epoch:',epoch)
-        key = str(epoch)
-        print(dphs[key])
-        for sat in dphs[key]:
+        for sat in dphs[str(epoch)]:
             satPRN = 'prn_'+str(sat)
-            print(satPRN)
-            i = int(epoch)
-            print(dphs[satPRN][i]['lccyc'])
-            print(dphs['satPRN'][i])
-    #print('KEYS:',dphs.keys())
+            ep  = dphs[str(epoch)][str(sat)]
+            az  = dphs[satPRN][ep]['az']
+            zen = 90. - dphs[satPRN][ep]['el']
+            epoch = dphs[satPRN][ep]['epoch']
+            lccyc = dphs[satPRN][ep]['lccyc']
+
+            print(epoch,sat,az,zen,lccyc)
     
     #   for dph in dphs:
 #       polar = ax.scatter(np.radians(ma), np.radians(mz)/np.pi*2., c=esm[:,:,0], s=50, alpha=1., cmap=cm.RdBu,vmin=-15,vmax=15, lw=0)

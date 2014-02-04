@@ -582,16 +582,21 @@ if __name__ == "__main__":
         # need an option to interpolate this onto a 0.1 grid, to be block median'd later in a ppp simulation
         #======================================================================
         if option.printFile:
-            ctr = 0
+            iCtr = 0
             f1=open('./fileL1.txt', 'w')
             f2=open('./fileL2.txt', 'w')
             fC=open('./fileLC.txt', 'w')
             for a in range(0,361,5):
+                jCtr = 0
                 for e in range(0,91,5):
-                    f1.write("{:.2f} {:.2f} {}\n".format(a, e, antenna1['L1PCV'][ctr]) )
-                    f2.write("{:.2f} {:.2f} {}\n".format(a, e, antenna1['L2PCV'][ctr]) )
-                    fC.write("{:.2f} {:.2f} {}\n".format(a, e, (2545.7*antenna1['L1PCV'][ctr] - 1545.7*antenna1['L2PCV'][ctr])/1000.))
-                    ctr = ctr + 1
+                    f1.write("{:.1f} {:.1f} {}\n".format(a, e, antenna1['L1PCV'][iCtr][jCtr]) )
+                    f2.write("{:.1f} {:.1f} {}\n".format(a, e, antenna1['L2PCV'][iCtr][jCtr]) )
+                    l1 = antenna1['L1PCV'][iCtr,jCtr] * 2545.7
+                    l2 = antenna1['L2PCV'][iCtr,jCtr] * 1545.7
+                    lc = l1 - l2
+                    fC.write("{:.2f} {:.2f} {}\n".format(a, e, (lc/1000.)))
+                    jCtr = jCtr + 1
+                iCtr = iCtr + 1
 
             f1.close()
             f2.close()
