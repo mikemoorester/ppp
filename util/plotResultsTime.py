@@ -93,7 +93,7 @@ if option.lat :
         # format the ticks
         time = np.array(time)
         ax.plot_date(time[ind,], data[ind,FEATURE]*1000.) 
-        ax.set_ylim([1,4])
+        #ax.set_ylim([1,4])
         #ax.suptitle("Latitude:",option.lat)
 
         years    = YearLocator()   # every year

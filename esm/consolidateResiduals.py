@@ -37,15 +37,31 @@ if __name__ == "__main__":
 
     # Iterate over each epoch
     for epoch in dphs['epochs']:
-        print('Epoch:',epoch)
+        #print('Epoch:',epoch)
         key = str(epoch)
-        print(dphs[key])
+        #print(dphs[key])
         for sat in dphs[key]:
             satPRN = 'prn_'+str(sat)
-            print(satPRN)
             i = int(epoch)
-            print(dphs[satPRN][i]['lccyc'])
-            print(dphs['satPRN'][i])
+            #print()
+            #print(dphs[satPRN][i])
+            #print()
+            #print(np.size(dphs[satPRN]))
+            if dphs[satPRN][i] != None and 'az' in dphs[satPRN][i] :
+                ts  = i-1 * 30
+                az  = dphs[satPRN][i]['az']
+                zen = 90. - dphs[satPRN][i]['el']
+                lc  = dphs[satPRN][i]['lccyc'] * 190.
+
+                print(ts,az,zen,lc,sat)
+            #dphs[satPRN][i]['epoch'])
+            #print(dphs[satPRN][i]['az'])
+            #print(dphs[satPRN][i]['el'])
+            #print(dphs[satPRN][i]['lccyc'])
+            #print(sat)
+            #print(dphs[satPRN][i].keys())
+            #print(dphs['satPRN'][i])
+
     #print('KEYS:',dphs.keys())
     
     #   for dph in dphs:

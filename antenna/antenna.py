@@ -134,7 +134,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='antenna',description='Parse ANTEX files')
 
     parser.add_argument('-f', '--file', dest='file1', default='./t/antmod.dat')
-    parser.add_argument('-t', '--AntType',dest='AntType', default='ASH701945C_M    NONE')
+    #parser.add_argument('-t', '--AntType',dest='AntType', default='ASH701945C_M    NONE')
+    parser.add_argument('-t', '--AntType',dest='AntType', default='TRM59800.00     NONE')
     parser.add_argument('-p', '--plot',dest='plot', default=False, action='store_true')
     parser.add_argument('--polar',dest='polar', default=False, action='store_true')
     parser.add_argument('--elevation',dest='elevation', default=False, action='store_true')
