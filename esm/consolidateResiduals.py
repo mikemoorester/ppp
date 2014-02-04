@@ -41,7 +41,7 @@ if __name__ == "__main__":
             az  = dphs[satPRN][ep]['az']
             zen = 90. - dphs[satPRN][ep]['el']
             epoch = dphs[satPRN][ep]['epoch']
-            lccyc = dphs[satPRN][ep]['lccyc']
+            lccyc = dphs[satPRN][ep]['lccyc'] * 190.
 
             print(epoch,sat,az,zen,lccyc)
     
